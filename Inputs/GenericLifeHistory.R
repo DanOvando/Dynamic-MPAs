@@ -51,7 +51,7 @@ lh$MoveType<- 'Simple'
 
 ###Recruitment
 lh$DDForm<- 'BH'
-lh$B0<- 1000000 #Virgin biomass
+lh$B0<- 1000 #Virgin biomass
 lh$R0<- lh$B0*(1-exp(-lh$m[1])) #Recruitment must equal deaths at EQ
 lh$SexRatio<- 0.5
 lh$LarvalChoice<- 0 #Whether larvae can choose to target good habitat. 1 means that eggs move towards better habitat, 0 means that recruitment is affected by habitat
