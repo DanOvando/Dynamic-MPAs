@@ -10,7 +10,7 @@ library(plyr)
 
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
 
-RunAnalysis<- 1
+RunAnalysis<- 0
 
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
 
@@ -24,7 +24,7 @@ AllSpeciesExperimentResults<- as.data.frame(matrix(NA,nrow=0,ncol=length(LongDat
 
 colnames(AllSpeciesExperimentResults)<- c(LongDataNames)
 
-BatchFolder<- 'Results/August_11_14/'
+BatchFolder<- 'Results/August_12_14_Wrapped/'
 dir.create(paste(BatchFolder,sep=''))
 
 # MPANames<- c('Status Quo','EqNTZ','Rotate','SNTZ','Basic','GNTZ','OptNTZ')
@@ -81,7 +81,7 @@ if (RunAnalysis==1)
     
     lh$MoveType<- '2D'
     
-    lh$MovementArray<- movArray(NumPatches,lh$Range*NumPatches)
+    lh$MovementArray<- movArray(NumPatches,(lh$Range/2)*NumPatches,'Wrap')
     
     lh$Bmsy<- -999
     
@@ -153,12 +153,10 @@ if (RunAnalysis==1)
     lh$Nmsy<- (colSums(BmsyPopulation$FinalNumAtAge)) #Nmsy
     
     lh$Bmsy<- colSums(BmsyPopulation$FinalNumAtAge*WeightAtAge) #Bmsy
-    
-    BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',1,'Bmsy Run') #Rerun Bmsy Population
-    
+        
     # DIE<- GrowPopulation(UnfishedPopulation,-log(exp(-Fmsy$par)/1.5),100,1,'DIE')
     
-    F50<- optimize(log(2*Fmsy$par),f=FindReferencePoint,Target='BvBmsy',TargetValue=0.5,lower=-10,upper=4) #Find F that results in target B/Bmsy
+    F50<- optimize(log(2*Fmsy$par),f=FindReferencePoint,Target='BvBmsy',TargetValue=0.5,lower=-10,upper=2) #Find F that results in target B/Bmsy
     
     F50$par<- exp(F50$minimum)
     
@@ -254,7 +252,7 @@ TimeToRun<-dim(MPAs)[1]
       BaseConditions$Biomass[f]<- round(sum(WeightAtAge %*% BasePop$FinalNumAtAge),2)
       BaseConditions$Numbers[f]<- round(sum(BasePop$FinalNumAtAge),2)
       
-      OptNTZSize<- 	optim(0.05,FindOptimalMPASize,lower=0,upper=0.999,FTemp=FScenarios[f],StartPop=StartPop,FleetSpill=FleetSpill,method="Brent") #You need a better optimization here, gets really stuck with any kind of stochasticity
+      OptNTZSize<- 	optim(0.2,FindOptimalMPASize,lower=0,upper=0.999,FTemp=FScenarios[f],StartPop=StartPop,FleetSpill=FleetSpill,method="Brent") #You need a better optimization here, gets really stuck with any kind of stochasticity
             
       Patches<- BasePatches
       
@@ -455,11 +453,11 @@ dev.off()
         
         YieldBalance<- ResultStorage$Yield-BaseConditions$Yield[f]
         
-        YieldBalance<- YieldBalance[2:TimeToRun]
+        YieldBalance<- YieldBalance[2:EvalTime]
         
         NegativeYears<- length(YieldBalance[YieldBalance<0])
         
-        NegativeYields<- Discount(YieldBalance[YieldBalance<0],Fleet$YieldDiscount,NegativeYears)$NPV #Discounted Requested Loan Amount. 
+        NegativeYields<- Discount(pmin(0,YieldBalance),Fleet$YieldDiscount,EvalTime-1)$NPV #Discounted Requested Loan Amount. 
         
         ExperimentResults[m,f,23]<- -NegativeYields    #Store Discounted Requested Loan Amount
         
@@ -472,57 +470,7 @@ dev.off()
         #         colnames(FlatExperimentResults)<- LongDataNames
         #         
       } #Close loop over MPA proposals
-      
-      
-#       pdf(file=paste(FigureFolder,'Yield Trajectoty ',f,'.pdf'),family=Font,pointsize=12,width=7,height=6)
-#       # sizemat<- matrix(1:2,nrow=1,ncol=2)
-#       # sizelay<- layout(mat=sizemat)
-#       par(mar=c(5.1,4.1,4.1,8.1),xpd=T)
-#       yMax<- max(RawYield[,f,], BaseConditions$Yield[f], OptimalConditions$Yield[f])
-#       yMin<- min(RawYield[,f,], BaseConditions$Yield[f], OptimalConditions$Yield[f])
-#       yMin<- .9*yMin
-#       matplot(t(RawYield[,f,1:11]),type='l',col=topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])],lwd=6,bty='n',xlab='Time',ylab='Fishing Yields',main=paste('F is ',round(FScenarios[f],4)),ylim=c(yMin,yMax),lty=c(1:dim(MPAs)[2]))
-#       abline(h=c(OptimalConditions$Yield[f]),lty=2,xpd=F)
-#       legend('topright',inset=c(-.35,0),legend=c(MPANames,'Long Term Optimal EQ'),bty='y',col=c(topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])],1,1),lty=c(1:dim(MPAs)[2],2),cex=0.6)
-#       dev.off()
-#       
-#       pdf(file=paste(FigureFolder,'Biomass Trajectoty ',f,'.pdf'),family=Font,pointsize=12,width=7,height=6)
-#       par(mar=c(5.1,4.1,4.1,8.1),xpd=T)
-#       
-#       yMax<- max(RawBiomass[,f,], BaseConditions$Biomass[f], OptimalConditions$Biomass[f])
-#       yMin<- min(RawBiomass[,f,], BaseConditions$Biomass[f], OptimalConditions$Biomass[f])
-#       yMin<- .9*yMin
-#       matplot(t(RawBiomass[,f,1:11]),type='l',col=topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])],lwd=6,bty='n',xlab='Time',ylab='Biomass',main=paste('F is ',round(FScenarios[f],4)),ylim=c(yMin,yMax),lty=c(1:dim(MPAs)[2]))
-#       abline(h=c(OptimalConditions$Biomass[f]),lty=2,xpd=F)
-#       legend('topright',inset=c(-.35,0),legend=c(MPANames,'Long Term Optimal EQ'),bty='t',col=c(topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])],1),lty=c(1:dim(MPAs)[2],2),cex=0.6)
-#       dev.off()
-#       
-#       
-#       pdf(file=paste(FigureFolder,'Yield Balance Trajectoty ',f,'.pdf'),family=Font,pointsize=12,width=7,height=6)
-#       par(mar=c(5.1,4.1,4.1,8.1),xpd=T)
-#       
-#       matplot(t(RawYield[,f,1:11]-BaseConditions$Yield[f]),type='l',col=topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])],lwd=6,bty='n',xlab='Time',ylab='Surplus Fishing Yields',main=paste('F is ',round(FScenarios[f],4)),lty=1:dim(MPAs)[2])
-#       abline(h=c(OptimalConditions$Yield[f]-BaseConditions$Yield[f]),lty=2,xpd=F)
-#       legend('topright',inset=c(-.35,0),legend=c(MPANames,'Long Term Optimal EQ'),bty='t',col=c(topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])],1),lty=c(1:dim(MPAs)[2],2),cex=0.6)
-#       dev.off()
-      
-      TempSurplus<- RawYield[,f,]-BaseConditions$Yield[f]
-      
-      for (tt in 1:dim(TempSurplus)[1])
-      {
-        TempSurplus[tt,]<- cumsum(TempSurplus[tt,])
-      }
-      
-      
-#       pdf(file=paste(FigureFolder,'NPB Trajectoty ',f,'.pdf'),family=Font,pointsize=12,width=7,height=6)
-#       par(mar=c(5.1,4.1,4.1,8.1),xpd=T)
-#       matplot(t(TempSurplus[,1:11]),type='l',col=topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])],lwd=6,bty='n',xlab='Time',ylab='NPB',main=paste('F is ',round(FScenarios[f],4)),lty=c(1:dim(MPAs)[2]))
-#       # abline(h=c(OptimalConditions$Yield[f]-BaseConditions$Yield[f]),lty=1:2)
-#       legend('topright',inset=c(-.35,0),legend=c(MPANames),bty='n',col=c(topo.colors(100)[seq(70,1,length.out=dim(MPAs)[2])]),lty=c(1:dim(MPAs)[2]),cex=.6)
-#       dev.off()  
-      
-      a=RawYield[,f,]-BaseConditions$Yield[f]
-      
+                  
     } #Close loop over fishing scenarios
     
     
@@ -821,10 +769,94 @@ for (s in 1:length(SpeciesList))
   },))
   dev.off()
   
+  pdf(file=paste(FigureFolder,'Heavy Fishing NPB Trajectory.pdf',sep=''),col='rgb')
+  #subset data for each scenario (m)
+  m1=subset(PlotStorage,m=="EqNTZ" & Species== SpeciesList[s])
+  m2=subset(PlotStorage,m=="GNTZ" & Species == SpeciesList[s])
+  m3=subset(PlotStorage,m=="SNTZ"& Species == SpeciesList[s])
+  m4=subset(PlotStorage,m=="OptNTZ"& Species == SpeciesList[s])
+  
+  # m4G=subset(PlotStorage,m=="OptPath"& Species == SpeciesList[2])
+  
+  y1_FirstYields<-(as.numeric(PlotStorage$YieldBalance[PlotStorage$f=="F50" & PlotStorage$PositiveYields==1 &  PlotStorage$Species== SpeciesList[s]]))
+  
+  y2_FirstYields<-(as.numeric(PlotStorage$YieldBalance[PlotStorage$f=="F25" & PlotStorage$PositiveYields==1 &  PlotStorage$Species== SpeciesList[s]]))
+  
+  
+  MaxYields<- max(y1_FirstYields, y2_FirstYields)
+  
+  y1_FirstYields<- y1_FirstYields/MaxYields
+  y2_FirstYields<- y2_FirstYields/MaxYields
+  
+  #get points where yield equals status quo
+  y1=PlotStorage[PlotStorage$f=="F50" & PlotStorage$PositiveYields==1 &  PlotStorage$Species== SpeciesList[s],c(6,18) ]
+  y2=PlotStorage[PlotStorage$f=="F25" & PlotStorage$PositiveYields==1 & PlotStorage$Species== SpeciesList[s],c(6,18)]
+  
+  par(mar=c(0,0,0,0),oma=c(4,6,2,6))
+  
+  plot(m1$Year[as.vector(m1$f)=="F25"],m1$NPB[as.vector(m1$f)=="F25"],
+       type="l",ylab="",xlab="Year",ylim=c(min(PlotStorage$NPB[PlotStorage$Species== SpeciesList[s]& PlotStorage$Year<= plotyears ]),1.25*max(PlotStorage$NPB[PlotStorage$Species== SpeciesList[s]& PlotStorage$Year<= plotyears])),
+       xlim=c(1,plotyears),col="dodgerblue",lwd=4 ,las=1)
+  mtext("Heavy Overfishing",line=-1)
+  text(1,max(PlotStorage$NPB)*0.99,"B.")
+  lines( m2$Year[as.vector(m2$f)=="F25"],m2$NPB[as.vector(m2$f)=="F25"],col=2,lwd=2,lty=3)
+  lines( m3$Year[as.vector(m3$f)=="F25"],m3$NPB[as.vector(m3$f)=="F25"],col="medium orchid",lwd=2,lty=4)
+  lines( m4$Year[as.vector(m4$f)=="F25"],m4$NPB[as.vector(m4$f)=="F25"],col="darkgreen",lwd=2,lty=5)
+  abline(h=0,lty=2)         
+  points(y2[,1],y2[,2],col=c("dodgerblue","medium orchid",2,"darkgreen"),pch=16, cex=2)
+  
+  par(new=TRUE, mfrow=c(1,1), oma=c(0,0,0,0))
+  
+  plot(1,
+       xlim=c(0,1),
+       ylim=c(0,1),
+       xaxs="i",
+       yaxs="i",
+       type="n",
+       axes=FALSE)
+  
+  MaxCircle<- round((MaxYields),0) 
+  
+  Difference<- 10-MaxCircle%%10
+  
+  MaxCircle <- MaxCircle + Difference
+  
+  CircleSize<- ((seq(from=MaxCircle/10,to=MaxCircle,length.out=5)))
+  
+  legend(0.85,0.9, legend= SubScenarios, lty=c(1,3,4,5),
+         col=c("dodgerblue",2,"medium orchid","darkgreen"),lwd=2,bty="n",cex=0.8)
+  
+  # legend(0.85,0.75, legend= CircleSize,pch=16,pt.cex=(CircleSize),col=c("black"),title='Yield Surplus',bty='n',y.intersp=1.5)
+  
+  
+  text(.5,.05,"Year",font=2)
+  
+  text(.03,.5,"Net Present Balance",srt=90,font=2)
+  
+  dev.off()
+  
+  pdf(file=paste(FigureFolder,'Heavy Overfishing FracNTZ Trajectory.pdf',sep=''))
+  print(xyplot(FracNTZ ~ Year,group=m,data=PlotStorage,type='l',subset=(Year<=11 & PlotStorage$Species==SpeciesList[s] & f=='F25'),auto.key=list(space='right',points=F,lines=T),lwd=4,drop.unused.levels=T,panel=function(x,y,...)
+  {panel.xyplot(x,y,...)
+   panel.abline(h=0,lty=2)
+  },))
+  dev.off()
+  
 } #Close Species Loop
 
 
 sum(is.na(AllSpeciesExperimentResults$MaxInterestRate))/dim(AllSpeciesExperimentResults)[1]
+
+
+PaperTable<- ddply(AllSpeciesExperimentResults,c('Species','FishingScenario','MPAScenario'),summarize,
+                   PositiveNPBYear=YearsToBalanceRecovery,PositivePBYear=YearsToBalanceRecovery,MaxInterestRate=MaxInterestRate,PriceBoostNeeded=PriceIncreaseNeeded)
+
+PaperTable$FishingScenario<- as.factor(PaperTable$FishingScenario)
+
+levels(PaperTable$FishingScenario)<- c('Moderate Overfishing','Heavy Overfishing')
+
+write.csv(file=paste(BatchFolder,'Summary Table for Paper.csv',sep=''),PaperTable)
+
 
 write.csv(file=paste(BatchFolder,'All Species Experiment Results.csv',sep=''),AllSpeciesExperimentResults)
 
