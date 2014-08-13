@@ -5,5 +5,8 @@
 **/*.csv
 **/*.xlsx
 **/*.docx
+**/*.rdata
+**/*.RData
+
 
 
