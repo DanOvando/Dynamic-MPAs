@@ -13,16 +13,15 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   #               MakePlots=1
   #             GroupFigName= 'Test'
   #        
+    
   
-  
-  
-  #   InitialPopulation<- TempPop
-  #   
-  #   FishingPressure<- FVec
-  #   Time=1
-  #   MakePlots=0
-  #   GroupFigName='huh'
-  #   
+#     InitialPopulation<- UnfishedPopulation
+#     
+#     FishingPressure<- FTemp
+#     Time='EQ'
+#     MakePlots=0
+#     GroupFigName='huh'
+#     
   
   
   #   RelativePatchSizes <- Patches$PatchSizes/sum(Patches$PatchSizes)
@@ -954,12 +953,69 @@ FindMaxInterestRate<- function(InterestRate,LoanTime,LoanAmount,Surplus)
   return((LoanAdjustedBalance^2))
 } 
 
-movArray<-function(SpaceC,sdy)
+movArray<-function(SpaceC,sdy,Form)
 {
+  
+  if (Form=='Wrap')
+  {
+    
+  
+#     SpaceC<- NumPatches
+#      sdy<- lh$Range*NumPatches
+#     
+    P<- SpaceC
+    sigmaL<- sdy  
+    ##################################
+    #Movement
+    ##################################
+    
+    #dispersal:common larval pool
+    DL1=matrix(1/(P),nrow=P,ncol=P)
+    
+    #dispersal:gaussian movement
+    #create movement probability matrix, start with distance matrix
+    loc<-seq(-(P-1),2*P,1)
+    area<-seq(1,P,1)
+    
+    #create distance matrix
+    dist<-matrix(NA,nrow=P,ncol=P*3)
+    for(i in 1:P)
+    {
+      for(j in 1:(P*3))
+      {
+        dist[i,j]<-area[i]-loc[j]
+      }
+    }
+    #now create the movement matrix of probabilities of movement
+    p.init<-round(exp(-((dist)^2)/(2*(sigmaL^2))),2)
+    
+    #now add matrices on ends to wrap movement and normalize so movement from any one area sums to one
+    p.all<-matrix(NA,nrow=P,ncol=(3*P))
+    for(i in 1:P)
+    {
+      for(j in 1:(3*P))
+      {
+        p.all[i,j]<-(p.init[i,j])/sum(p.init[i,])
+      }
+    }
+    
+    p1<-p.all[,1:P]
+    p2<-p.all[,(2*P+1):(3*P)]
+    parea<-p.all[,(P+1):(2*P)]
+    SpaceIn<-p1+p2+parea
+    
+    FormatFigure('Movement Probabilities.pdf')
+    contour(SpaceIn)
+    dev.off()
+    
+  } #Close Form Loop
+  if (Form=='Bounce')
+  {
+  
   SpaceR<- 1
-  #   SpaceC<- NumPatches
+#      SpaceC<- NumPatches
   sdx<- 0.9
-  #   sdy<- 0.9
+#      sdy<- 0.9
   
   SpaceIn<-array(dim=c(SpaceR,SpaceC,SpaceC*SpaceR))
   # bivariate normal diffusion
@@ -975,7 +1031,9 @@ movArray<-function(SpaceC,sdy)
   for(h in 1:nrow(coords))
     for(j in 1:SpaceR)
       for(k in 1:SpaceC)
-        SpaceIn[j,k,h]<-exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
+#         SpaceIn[j,k,h]<- exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
+        SpaceIn[j,k,h]<- exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
+
   
   # normalize so that it sums to 1 (effectively wraps around)
   for(h in 1:nrow(coords))
@@ -986,7 +1044,8 @@ movArray<-function(SpaceC,sdy)
   FormatFigure('Movement Probabilities.pdf')
   contour(SpaceIn)
   dev.off()
-  
+  }
+
   return(SpaceIn)
 }
 
@@ -1004,11 +1063,13 @@ DistFleet<- function(FishingAtAge,SelectivityAtAge,NumAtAge)
   
   #   Patches$MPALocations[1]<- 1
   
-  if (sum(Patches$MPALocations==0)>0)
+  if (sum(Patches$MPALocations)>0)
   {
     
     FishingAtSpace<- t(t(FishingAtAge) *  (ProportionalBiomass/max(ProportionalBiomass)))
   }
   else {FishingAtSpace<- FishingAtAge}
+  
+  FishingAtSpace[is.na(FishingAtSpace)]<- 0
   return(FishingAtSpace)
 }
