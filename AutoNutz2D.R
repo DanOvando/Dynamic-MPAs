@@ -10,7 +10,7 @@ library(plyr)
 
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
 
-RunAnalysis<- 0
+RunAnalysis<- 1
 
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
 
@@ -24,7 +24,7 @@ AllSpeciesExperimentResults<- as.data.frame(matrix(NA,nrow=0,ncol=length(LongDat
 
 colnames(AllSpeciesExperimentResults)<- c(LongDataNames)
 
-BatchFolder<- 'Results/August_12_14_Wrapped/'
+BatchFolder<- 'Results/August_13_14/'
 dir.create(paste(BatchFolder,sep=''))
 
 # MPANames<- c('Status Quo','EqNTZ','Rotate','SNTZ','Basic','GNTZ','OptNTZ')
@@ -480,12 +480,12 @@ if (RunAnalysis==1)
       
       MaxInterestRate<- NA
       
-      if (as.numeric(FlatExperimentResults$RequestedLoan[d])>0 & as.numeric(FlatExperimentResults$RequestedLoan[d])<=as.numeric(FlatExperimentResults$TenYearNPSurplus[d]) )
-      {
-        
-        MaxInterestRate<- optim(-4,FindMaxInterestRate,LoanTime=LoanTime,LoanAmount=as.numeric(FlatExperimentResults$RequestedLoan[d]),Surplus=as.numeric(FlatExperimentResults$TenYearNPSurplus[d]),lower=-10,upper=10,method='Brent')$par
-        
-      }
+#       if (as.numeric(FlatExperimentResults$RequestedLoan[d])>0 & as.numeric(FlatExperimentResults$RequestedLoan[d])<=as.numeric(FlatExperimentResults$TenYearNPSurplus[d]) )
+#       {
+#         
+#         MaxInterestRate<- optim(-4,FindMaxInterestRate,LoanTime=LoanTime,LoanAmount=as.numeric(FlatExperimentResults$RequestedLoan[d]),Surplus=as.numeric(FlatExperimentResults$TenYearNPSurplus[d]),lower=-10,upper=10,method='Brent')$par
+#         
+#       }
       FlatExperimentResults$MaxInterestRate[d]<- 100*exp(MaxInterestRate)
     }
     
@@ -648,10 +648,56 @@ Cols<-   scales::hue_pal(h = c(0, 360) + 15, c = 100, l = 65, h.start = 0, direc
 
 plotyears=11  #no. years to plot
 
-###Not as slick as xyplot, but gives you full control over what is plotted
+
+levels(PlotStorage$m)<- c('Equilibrium','Grow','Optimize','Shrink')
+
+
+pdf(file=paste(BatchFolder,'Aggregate NPB Trajectory.pdf',sep=''))
+xyplot(NPB ~ Year | Species,group=m,data=PlotStorage,scales=list(y='free'),ylab='Net Profit Balance ($)',
+        subset=f=='F25' & Year< EvalTime,auto.key=list(title='Reserve'),type='l',lwd=2,panel=function(x,y,...)
+          {
+          panel.xyplot(x,y,...)
+          panel.abline(h=0,lwd=2,lty=2)
+        })
+dev.off()
+
+pdf(file=paste(BatchFolder,'Aggregate PB Trajectory.pdf',sep=''))
+
+xyplot(YieldBalance ~ Year | Species,group=m,data=PlotStorage,scales=list(y='free'),ylab='Profit Balance ($)',
+       subset=f=='F25' & Year< EvalTime,auto.key=list(title='Reserve'),type='l',lwd=2,panel=function(x,y,...)
+       {
+         panel.xyplot(x,y,...)
+         panel.abline(h=0,lwd=2,lty=2)
+       })
+
+dev.off()
+
+PlotStorage$MaxInterestRate[PlotStorage$MaxInterestRate>100]<- 100
+
+pdf(file=paste(BatchFolder,'Aggregate Max Interest Rate.pdf',sep=''))
+barchart(~MaxInterestRate | Species,group=m,data=PlotStorage,subset=Year==1 & f=='F25',auto.key=list(title='Reserve'),xlab='Maximum % Interest Rate')
+dev.off()
+
+pdf(file=paste(BatchFolder,'Aggregate Required Price Increase.pdf',sep=''))
+
+barchart(~PriceIncreaseNeeded | Species,group=m,data=PlotStorage,subset=Year==1 & f=='F25',auto.key=list(title='Reserve'),xlab='% Price Increase Needed')
+
+dev.off()
+
+pdf(file=paste(BatchFolder,'Aggregate EQ Reserve.pdf',sep=''))
+
+PlotStorage$OptNTZ<- 100*as.numeric(PlotStorage$OptNTZ)
+
+barchart(~((OptNTZ)), group= Species,data=PlotStorage,subset=Year==1 & f=='F25' & m=='Equilibrium',auto.key=T,xlab='Optimal Equilibrium Reserve %')
+
+dev.off()
+
+SubScenarios<- c('Equilibrium','Grow','Shrink','Optimize')
+
 for (s in 1:length(SpeciesList))
 {
   
+
   MaxNPB<- max(PlotStorage$NPB[PlotStorage$Year<=plotyears])
   
   FigureFolder<- paste(BatchFolder,SpeciesList[s],'/Figures/',sep='')
@@ -659,10 +705,10 @@ for (s in 1:length(SpeciesList))
   
   pdf(file=paste(FigureFolder,'NPB Trajectory.pdf',sep=''),col='rgb')
   #subset data for each scenario (m)
-  m1=subset(PlotStorage,m=="EqNTZ" & Species== SpeciesList[s])
-  m2=subset(PlotStorage,m=="GNTZ" & Species == SpeciesList[s])
-  m3=subset(PlotStorage,m=="SNTZ"& Species == SpeciesList[s])
-  m4=subset(PlotStorage,m=="OptNTZ"& Species == SpeciesList[s])
+  m1=subset(PlotStorage,m=="Equilibrium" & Species== SpeciesList[s])
+  m2=subset(PlotStorage,m=="Grow" & Species == SpeciesList[s])
+  m3=subset(PlotStorage,m=="Shrink"& Species == SpeciesList[s])
+  m4=subset(PlotStorage,m=="Optimize"& Species == SpeciesList[s])
   
   # m4G=subset(PlotStorage,m=="OptPath"& Species == SpeciesList[2])
   
@@ -730,7 +776,7 @@ for (s in 1:length(SpeciesList))
   
   text(.5,.05,"Year",font=2)
   
-  text(.03,.5,"Net Present Balance",srt=90,font=2)
+  text(.03,.5,"Net Present Balance ($)",srt=90,font=2)
   
   dev.off()
   
@@ -743,10 +789,10 @@ for (s in 1:length(SpeciesList))
   
   pdf(file=paste(FigureFolder,'Heavy Fishing NPB Trajectory.pdf',sep=''),col='rgb')
   #subset data for each scenario (m)
-  m1=subset(PlotStorage,m=="EqNTZ" & Species== SpeciesList[s])
-  m2=subset(PlotStorage,m=="GNTZ" & Species == SpeciesList[s])
-  m3=subset(PlotStorage,m=="SNTZ"& Species == SpeciesList[s])
-  m4=subset(PlotStorage,m=="OptNTZ"& Species == SpeciesList[s])
+  m1=subset(PlotStorage,m=="Equilibrium" & Species== SpeciesList[s])
+  m2=subset(PlotStorage,m=="Grow" & Species == SpeciesList[s])
+  m3=subset(PlotStorage,m=="Shrink"& Species == SpeciesList[s])
+  m4=subset(PlotStorage,m=="Optimize"& Species == SpeciesList[s])
   
   # m4G=subset(PlotStorage,m=="OptPath"& Species == SpeciesList[2])
   
@@ -769,7 +815,7 @@ for (s in 1:length(SpeciesList))
   plot(m1$Year[as.vector(m1$f)=="F25"],m1$NPB[as.vector(m1$f)=="F25"],
        type="l",ylab="",xlab="Year",ylim=c(min(PlotStorage$NPB[PlotStorage$Species== SpeciesList[s]& PlotStorage$Year<= plotyears ]),1.25*max(PlotStorage$NPB[PlotStorage$Species== SpeciesList[s]& PlotStorage$Year<= plotyears])),
        xlim=c(1,plotyears),col="dodgerblue",lwd=4 ,las=1)
-  mtext("Heavy Overfishing",line=-1)
+#   mtext("Heavy Overfishing",line=-1)
   text(1,max(PlotStorage$NPB)*0.99,"B.")
   lines( m2$Year[as.vector(m2$f)=="F25"],m2$NPB[as.vector(m2$f)=="F25"],col=2,lwd=2,lty=3)
   lines( m3$Year[as.vector(m3$f)=="F25"],m3$NPB[as.vector(m3$f)=="F25"],col="medium orchid",lwd=2,lty=4)
@@ -796,19 +842,19 @@ for (s in 1:length(SpeciesList))
   CircleSize<- ((seq(from=MaxCircle/10,to=MaxCircle,length.out=5)))
   
   legend(0.85,0.9, legend= SubScenarios, lty=c(1,3,4,5),
-         col=c("dodgerblue",2,"medium orchid","darkgreen"),lwd=2,bty="n",cex=0.8)
+         col=c("dodgerblue",2,"medium orchid","darkgreen"),lwd=2,bty="n",cex=0.7)
   
   # legend(0.85,0.75, legend= CircleSize,pch=16,pt.cex=(CircleSize),col=c("black"),title='Yield Surplus',bty='n',y.intersp=1.5)
   
   
   text(.5,.05,"Year",font=2)
   
-  text(.03,.5,"Net Present Balance",srt=90,font=2)
+  text(.03,.5,"Net Present Balance ($)",srt=90,font=2)
   
   dev.off()
   
   pdf(file=paste(FigureFolder,'Heavy Overfishing FracNTZ Trajectory.pdf',sep=''))
-  print(xyplot(FracNTZ ~ Year,group=m,data=PlotStorage,type='l',subset=(Year<=11 & PlotStorage$Species==SpeciesList[s] & f=='F25'),auto.key=list(space='right',points=F,lines=T),lwd=4,drop.unused.levels=T,panel=function(x,y,...)
+  print(xyplot(100*FracNTZ ~ Year,group=m,data=PlotStorage,ylab=' % in Reserve',type='l',subset=(Year<=11 & PlotStorage$Species==SpeciesList[s] & f=='F25'),auto.key=list(space='right',points=F,lines=T),lwd=4,drop.unused.levels=T,panel=function(x,y,...)
   {panel.xyplot(x,y,...)
    panel.abline(h=0,lty=2)
   },))
