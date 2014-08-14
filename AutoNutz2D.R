@@ -680,6 +680,8 @@ dev.off()
 
 pdf(file=paste(BatchFolder,'Aggregate Required Price Increase.pdf',sep=''))
 
+PlotStorage$PriceIncreaseNeeded[is.na(PlotStorage$PriceIncreaseNeeded)]<- 0
+
 barchart(~PriceIncreaseNeeded | Species,group=m,data=PlotStorage,subset=Year==1 & f=='F25',auto.key=list(title='Reserve'),xlab='% Price Increase Needed')
 
 dev.off()
