@@ -25,7 +25,7 @@ FontSize<- 14 #Font size for figures
 Font<- "Palatino" #Font type for figures
 
 ####### SET OPERATING PARAMETERS ########
-PopTolerance<- 1 #the cutoff for identifying point where population stops changing
+PopTolerance<- 0.01 #the cutoff for identifying point where population stops changing
 InitialPopulation<- 1000 #Seed for initial population 
 CollapseThreshold<- 0.1
 LookAtLengths<- 0

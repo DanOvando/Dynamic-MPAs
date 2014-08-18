@@ -13,15 +13,15 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   #               MakePlots=1
   #             GroupFigName= 'Test'
   #        
-    
   
-#     InitialPopulation<- UnfishedPopulation
-#     
-#     FishingPressure<- FTemp
-#     Time='EQ'
-#     MakePlots=0
-#     GroupFigName='huh'
-#     
+  
+  #     InitialPopulation<- UnfishedPopulation
+  #     
+  #     FishingPressure<- FTemp
+  #     Time='EQ'
+  #     MakePlots=0
+  #     GroupFigName='huh'
+  #     
   
   
   #   RelativePatchSizes <- Patches$PatchSizes/sum(Patches$PatchSizes)
@@ -100,7 +100,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     FishingAtAge<- DistFishingAtAge(FishingPressure[1,],SelectivityAtAge) #Calculate fishing mortality at age
     
     FishingAtSpace<- DistFleet(FishingAtAge,SelectivityAtAge,PopArray[t,,]) #Distribute fishing fleet accordings to biomass
-        
+    
     Survival<- exp(-(FishingAtSpace+lh$m)) #calculate survival from each age class to the next
     
     FishingYields<- GoFish(FishingAtSpace,Survival,PopArray[t,,])     
@@ -123,14 +123,9 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     PopArray[PopArray<1]<- 0
     
-    # show(MoveAdults(PopArray[t+1,,],lh$Range,lh$MoveType))
-    
-    
     WeightArray[t+1,,]<- PopArray[t+1,,] * WeightAtAge
+    
     PopChange<- sum(PopTolerance< abs((colSums(WeightArray[t+1,,])-colSums(WeightArray[t,,])))) #Measure change in 
-    
-    # PopChange<- sum(PopTolerance< abs((colSums(WeightArray[t+1,,])/colSums(WeightArray[t,,]))-1)) #Measure change in 
-    
     
     t<- t+1
     if (t>1900 & PopChange>0)
@@ -741,9 +736,9 @@ AssignNTZ<- function(NTZSize,Position)
   
   if (Position=='Edge')
   {
-  NTZBorder<- min(NumPatches,max(0,round(NumPatches*NTZSize)))
-  
-  Patches$MPALocations[0:NTZBorder]<<- 1
+    NTZBorder<- min(NumPatches,max(0,round(NumPatches*NTZSize)))
+    
+    Patches$MPALocations[0:NTZBorder]<<- 1
   }
   if (Position=='Center')
   {
@@ -877,7 +872,7 @@ LoanPayment<- function(principle,rate,nyears,ppyear)
   return(lp)
 }
 
-MPAFunction<- function(OptVector,t,OptSize)
+MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime)
 {
   # MPASize<- (OptVector[1]+OptVector[2]*t+(OptVector[3]*t)^2)/1000
   
@@ -887,7 +882,28 @@ MPAFunction<- function(OptVector,t,OptSize)
   
   # OptVector<- c(5,6)
   
-  MPASize<-(OptSize/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
+  if (Mode=='FreeLogistic')
+  {
+    
+    
+    MPASize<-(OptSize/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
+    
+  }
+  if (Mode=='LockedLogistic')
+  {
+    
+    OptVector<- c(-2,EvalTime-1)
+    MPASize<- (1/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
+    
+  }
+  if (Mode=='Linear')
+  {
+    
+    Slope<- (OptSize-OptVector[1])/EvalTime
+    
+    MPASize<- Slope*t+OptVector[1]
+    
+  }
   
   # 	MPASize<- pmin(MPASize,1)
   
@@ -896,7 +912,7 @@ MPAFunction<- function(OptVector,t,OptSize)
   return(MPASize)
 }
 
-FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize)
+FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime)
 {
   
   #   OptVector<- TestOpt$par
@@ -919,7 +935,7 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
     
     if (OptMode=='Function')
     {
-      MPASize<- MPAFunction(OptVector,t,OptSize)
+      MPASize<- MPAFunction(OptVector,t,OptSize,Mode,EvalTime)
     }
     
     AssignNTZ(MPASize,ReservePosition)
@@ -959,10 +975,10 @@ movArray<-function(SpaceC,sdy,Form)
   if (Form=='Wrap')
   {
     
-  
-#     SpaceC<- NumPatches
-#      sdy<- lh$Range*NumPatches
-#     
+    
+    #     SpaceC<- NumPatches
+    #      sdy<- lh$Range*NumPatches
+    #     
     P<- SpaceC
     sigmaL<- sdy  
     ##################################
@@ -1011,41 +1027,41 @@ movArray<-function(SpaceC,sdy,Form)
   } #Close Form Loop
   if (Form=='Bounce')
   {
-  
-  SpaceR<- 1
-#      SpaceC<- NumPatches
-  sdx<- 0.9
-#      sdy<- 0.9
-  
-  SpaceIn<-array(dim=c(SpaceR,SpaceC,SpaceC*SpaceR))
-  # bivariate normal diffusion
-  # list the coordinates 
-  coords<-NULL
-  for(x in 1:SpaceR)
-  {
-    temp<-cbind(rep(x,SpaceC),seq(1,SpaceC))
-    coords<-rbind(coords,temp)
+    
+    SpaceR<- 1
+    #      SpaceC<- NumPatches
+    sdx<- 0.9
+    #      sdy<- 0.9
+    
+    SpaceIn<-array(dim=c(SpaceR,SpaceC,SpaceC*SpaceR))
+    # bivariate normal diffusion
+    # list the coordinates 
+    coords<-NULL
+    for(x in 1:SpaceR)
+    {
+      temp<-cbind(rep(x,SpaceC),seq(1,SpaceC))
+      coords<-rbind(coords,temp)
+    }
+    
+    # population the probability array of moving 
+    for(h in 1:nrow(coords))
+      for(j in 1:SpaceR)
+        for(k in 1:SpaceC)
+          #         SpaceIn[j,k,h]<- exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
+          SpaceIn[j,k,h]<- exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
+    
+    
+    # normalize so that it sums to 1 (effectively wraps around)
+    for(h in 1:nrow(coords))
+      SpaceIn[,,h]<-SpaceIn[,,h]/sum(SpaceIn[,,h])
+    
+    dim(SpaceIn)<- c(NumPatches,NumPatches)
+    
+    FormatFigure('Movement Probabilities.pdf')
+    contour(SpaceIn)
+    dev.off()
   }
   
-  # population the probability array of moving 
-  for(h in 1:nrow(coords))
-    for(j in 1:SpaceR)
-      for(k in 1:SpaceC)
-#         SpaceIn[j,k,h]<- exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
-        SpaceIn[j,k,h]<- exp(-(((coords[h,1]-j))^2/(2*sdx^2)+((coords[h,2]-k))^2/(2*sdy^2)))
-
-  
-  # normalize so that it sums to 1 (effectively wraps around)
-  for(h in 1:nrow(coords))
-    SpaceIn[,,h]<-SpaceIn[,,h]/sum(SpaceIn[,,h])
-  
-  dim(SpaceIn)<- c(NumPatches,NumPatches)
-  
-  FormatFigure('Movement Probabilities.pdf')
-  contour(SpaceIn)
-  dev.off()
-  }
-
   return(SpaceIn)
 }
 
