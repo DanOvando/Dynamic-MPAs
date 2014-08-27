@@ -706,7 +706,7 @@ dev.off()
 pdf(file=paste(BatchFolder,'Tradeoff Analysis.pdf',sep=''))
 
 print(xyplot(as.numeric(Biomass)/(Bmsy)  ~ NPB | Species,group=m,data=PlotStorage,ylab='B/Bmsy',
-             subset=f=='F25' & Year== plotyears,pch=19,auto.key=T,lwd=2,scales=list(x='free'),
+             subset=f=='F25' & Year== plotyears,cex=2,cex.axis=0.75,pch=19,auto.key=T,lwd=2,scales=list(x='free'),
              panel=function(x,y,...)
              {
                panel.xyplot(x,y,...)
@@ -751,6 +751,8 @@ dev.off()
 pdf(file=paste(BatchFolder,'Aggregate Required Price Increase.pdf',sep=''))
 
 PlotStorage$PriceIncreaseNeeded[is.na(PlotStorage$PriceIncreaseNeeded)]<- 0
+
+a<- ddply(PlotStorage,c('f','m','Species'),summarize,BenefitTime=which(NPB>0)[1])
 
 print(barchart(~PriceIncreaseNeeded | Species,group=m,data=PlotStorage,scales=list(cex=0.7,labels=c("",paste(seq(0,max(PlotStorage$PriceIncreaseNeeded,na.rm=T),by=20),'%',sep='')))
                ,subset=Year==1 & f=='F25',auto.key=T,xlab='% Price Increase Needed',
