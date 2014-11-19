@@ -30,8 +30,8 @@ InitialPopulation<- 1000 #Seed for initial population
 CollapseThreshold<- 0.1
 LookAtLengths<- 0
 ReservePosition<- 'Center'
-OptTime<- 10 #Time Horizon to optimize over
-
+OptTime<- 75 #Time Horizon to optimize over
+Alpha<- 0.5
 
 ####### Load in Population Parameters ########
 
@@ -53,7 +53,7 @@ MaturityAtAge<- Maturity(1:lh$MaxAge, MaturityMode) # Calculate maturity at age 
 
 # ####### Set Fishing Fleet/Management Parameters ########
 Fleet<- NULL
-Fleet$YieldDiscount<- 0.05
+Fleet$YieldDiscount<- 0.5
 Fleet$BiomassDiscount<- 0.05
 Fleet$SizeLimit<- .001
 Fleet$s50<- .001
