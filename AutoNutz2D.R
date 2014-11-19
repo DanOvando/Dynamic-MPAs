@@ -3,15 +3,18 @@ library(lattice)
 require(stats)
 library(proftools)
 library(plyr)
+library(grid)
+library(gridExtra)
+
 ####### Shrinking MPAs #########
 #Wilson, Doughtery, Ovando et al something something
 
 ####### READ IN CONTROL FILE ########
 
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
-BatchFolder<- 'Results/8_14_15/'
+BatchFolder<- 'Results/10_15_14/'
 
-RunAnalysis<- 0
+RunAnalysis<- 1
 
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
 
@@ -59,7 +62,7 @@ SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
 if (RunAnalysis==1)
 {
   
-  for (s in 1:length(SpeciesList))
+  for (s in 1:2) #length(SpeciesList))
   {
     Species<- SpeciesList[s] #species file to load
     
@@ -156,13 +159,17 @@ if (RunAnalysis==1)
     
     Fmsy$par<- exp(Fmsy$minimum) 
     
-    BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',0,'Bmsy Run') #Bmsy Population
+    BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',1,'Bmsy Run') #Bmsy Population
     
     lh$Nmsy<- (colSums(BmsyPopulation$FinalNumAtAge)) #Nmsy
     
     lh$Bmsy<- colSums(BmsyPopulation$FinalNumAtAge*WeightAtAge) #Bmsy
     
     SystemBmsyStorage[s,]<- data.frame(Species,sum(lh$Bmsy),stringsAsFactors=F)
+    
+    MsyFishing<- GrowPopulation(BmsyPopulation$FinalNumAtAge,rep(Fmsy$par,NumPatches),OptTime,1,'MSY Run') #Bmsy Population
+    
+    Fleet$MSY_NPV<- MsyFishing$Performance$DiscYields$NPV
     
     # DIE<- GrowPopulation(UnfishedPopulation,-log(exp(-Fmsy$par)/1.5),100,1,'DIE')
     
@@ -184,13 +191,13 @@ if (RunAnalysis==1)
     #      flatProfile(RProfData,byTotal=TRUE)
     ####### RUN MPA SIMULATIONS ########
     
-    MPAs<- as.data.frame(matrix(NA,ncol=length(MPANames),nrow=OptTime+1))
+    MPAs<- as.data.frame(matrix(NA,ncol=length(MPANames),nrow=OptTime))
     
     colnames(MPAs)<- MPANames
     
     TimeToRun<-dim(MPAs)[1]
     
-    EvalTime<- OptTime+1 #Time span to evaluate results on
+    EvalTime<- OptTime #Time span to evaluate results on
     RunTime<- 'Custom'
     PropNames<- NULL
     for (m in 1:dim(MPAs)[2])
@@ -259,35 +266,73 @@ if (RunAnalysis==1)
       BaseConditions$Numbers[f]<- round(sum(BasePop$FinalNumAtAge),2)
       
       OptNTZSize<- 	optim(0.2,FindOptimalMPASize,lower=0,upper=0.999,FTemp=FScenarios[f],StartPop=StartPop,FleetSpill=FleetSpill,method="Brent") #You need a better optimization here, gets really stuck with any kind of stochasticity
-      
-      #       OptNTZSize<-   optim(0.2,FindOptimalMPASize,lower=0,upper=0.999,FTemp=FScenarios[f],StartPop=StartPop,FleetSpill=FleetSpill,method="Brent") #You need a better optimization here, gets really stuck with any kind of stochasticity
-      
+            
       Patches<- BasePatches
       
-      #       OptMPAPath<- (optim(c(0.5),lower=0,upper=1,FindMPATrajectory,Mode='Linear',EvalTime=EvalTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='Brent'))    
-      #       
-      #        OptMPAPath2<- (optim(c(-1,5),FindMPATrajectory,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='BFGS'))    
+      MPASizes<- seq(0,1,by=0.25)
       
-      # 
-      OptMPAPath1<- (optim(c(OptTime,-OptTime),FindMPATrajectory,Mode='FreeLogistic',EvalTime=OptTime+1,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+      Time<- seq(-75,75,by=20)
       
-      OptMPAPath2<- (optim(c(-1,5),FindMPATrajectory,Mode='FreeLogistic',EvalTime=OptTime+1,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='BFGS'))    
-      
-      
-      WhichBest<- which(c(OptMPAPath1$value,OptMPAPath2$value)==min(c(OptMPAPath1$value,OptMPAPath2$value)))
-      
-      if (WhichBest==1)
+      SurfaceStore<- matrix(NA,nrow=length(MPASizes)*length(Time)*length(Time),ncol=4)
+      c<- 0
+      for (t1 in 1:length(Time))
       {
-        OptMPAPath<- (optim(OptMPAPath1$par,FindMPATrajectory,Mode='FreeLogistic',EvalTime=OptTime+1,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='BFGS'))    
-        
-      }
-      if (WhichBest==2)
-      {
-        OptMPAPath<- (optim(OptMPAPath2$par,FindMPATrajectory,Mode='FreeLogistic',EvalTime=OptTime+1,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='BFGS'))    
-        
+        for (t2 in 1:length(Time))
+        {
+          for (m in 1:length(MPASizes))
+          {
+            c<- c+1
+            
+            Obj<- -FindMPATrajectory(c(Time[t1],Time[t2]+.01,MPASizes[m]),Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f])
+              
+              SurfaceStore[c,]<- c(Time[t1],Time[t2],MPASizes[m],Obj)
+          }
+        }
       }
       
       
+      SurfaceStore<- as.data.frame(SurfaceStore)
+      colnames(SurfaceStore)<- c('T1','T2','MPA','Objective')
+      
+      pdf(file=paste(FigureFolder,'OptMPA Surface.pdf',sep=''))
+      print(levelplot(Objective ~ T1 * T2 | as.factor(MPA),data=SurfaceStore))
+      dev.off()
+      
+      BestGuess<- as.numeric(SurfaceStore[which(SurfaceStore$Objective==max(SurfaceStore$Objective)),][1,])
+      
+      
+      OptMPAPath<- (optim(c(BestGuess[1],BestGuess[2],BestGuess[3]),FindMPATrajectory,control=list(trace=6,reltol=1e-3),lower=c(-OptTime-1,-OptTime-1,0),upper=c(OptTime+1,OptTime+1,1),Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#       
+#       
+#       
+#       OptMPAPath1<- (nlminb(c(-OptTime*.51,-OptTime*.5,0.9),FindMPATrajectory,lower=c(-OptTime,-OptTime,0),upper=c(OptTime,OptTime,1),control=list(step.max=10),Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#       
+#       OptMPAPath1<- (nlminb(c(OptTime*.9,OptTime*.5,.1),FindMPATrajectory,control=list(step.max=20),Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#       
+#       OptMPAPath2<- (nlminb(c(-OptTime*.5,OptTime*.9,.6),FindMPATrajectory,control=list(step.max=20),Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+# 
+#       OptMPAPath2<- (nlm(FindMPATrajectory,c(-OptTime*.5,OptTime*.9,.6),hessian=T,Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#       
+#       
+#       OptMPAPath2<- (optim(c(0,0.1,.2),FindMPATrajectory,method='SANN',control=list(temp=40,tmax=20),Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+
+#       OptMPAPath2<- (optim(c(-OptTime/2,OptTime/2),FindMPATrajectory,Mode='LockedLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=Alpha,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='BFGS'))    
+#       
+#       
+#       WhichBest<- which(c(OptMPAPath1$value,OptMPAPath2$value)==min(c(OptMPAPath1$value,OptMPAPath2$value)))
+#       
+#       if (WhichBest==1)
+#       {
+#         OptMPAPath<- (optim(OptMPAPath1$par,FindMPATrajectory,Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='BFGS'))    
+#         
+#       }
+#       if (WhichBest==2)
+#       {
+#         OptMPAPath<- (optim(OptMPAPath2$par,FindMPATrajectory,Mode='FreeLogistic',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f],method='BFGS'))    
+#         
+#       }
+#       
+#       
       #       FindMPATrajectory(OptMPAPath$par,Mode='Linear',EvalTime=EvalTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f])
       
       #       FindMPATrajectory(OptMPAPath$par,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,OptMode='Function',BaseYields=BaseConditions$Yield[f])
@@ -663,9 +708,18 @@ PlotStorage$PosYears<- PlotStorage$Year * PlotStorage$PositiveYields
 
 PlotStorage$PosNPB<- PlotStorage$NPB * PlotStorage$PositiveYields
 
+TimeToNPB<- ddply(PlotStorage[PlotStorage$f=='F25',],c('Species','m'),summarize,Year=which(NPB>0)[1])
+
+TimeToNPB$Year[is.na(TimeToNPB$Year)]<- TimeToRun
+
+pdf(file=paste(BatchFolder,'Time to Positive NPB.pdf',sep=''))
+barchart(~Year | Species,group=m,data=TimeToNPB,auto.key=T,xlab='Years to Positive NPB')
+dev.off()
+
+
 Cols<-   scales::hue_pal(h = c(0, 360) + 15, c = 100, l = 65, h.start = 0, direction = 1)
 
-plotyears=11  #no. years to plot
+plotyears=75  #no. years to plot
 
 
 PlotStorage<- join(PlotStorage,SystemBmsyStorage,by='Species')
@@ -737,30 +791,22 @@ PlotStorage$MaxInterestRate[is.na(PlotStorage$MaxInterestRate)]<- 100
 
 scales=list(labels=c("",paste(seq(0,80,by=20),'%',sep=''),'>=100%'))
 
-pdf(file=paste(BatchFolder,'Aggregate Max Interest Rate.pdf',sep=''))
-print(barchart(~MaxInterestRate | Species,scales=list(cex=0.7,labels=c("",paste(seq(0,80,by=20),'%',sep=''),'>100%'))
-               ,group=m,data=PlotStorage,subset=Year==1 & f=='F25',auto.key=T,xlab='Maximum % Interest Rate'
-               ,panel=function(x,y,...)
-               {
-                 panel.barchart(x,y,...)
-                 panel.abline(v=0,lty=2)
-               }))
-dev.off()
+pdf(file=paste(BatchFolder,'Aggregate Financial Analysis.pdf',sep=''))
 
 
-pdf(file=paste(BatchFolder,'Aggregate Required Price Increase.pdf',sep=''))
+IntPlot<- (barchart(~MaxInterestRate | Species,scales=list(cex=0.7,labels=c("",paste(seq(0,80,by=20),'%',sep=''),'>100%'))
+                    ,group=m,main='A',data=PlotStorage,auto.key=T,subset=Year==1 & f=='F25',par.strip.text=list(cex=.75),xlab=list(label='Maximum % Interest Rate',fontsize=10),
+                    
+))
 
 PlotStorage$PriceIncreaseNeeded[is.na(PlotStorage$PriceIncreaseNeeded)]<- 0
 
 a<- ddply(PlotStorage,c('f','m','Species'),summarize,BenefitTime=which(NPB>0)[1])
 
-print(barchart(~PriceIncreaseNeeded | Species,group=m,data=PlotStorage,scales=list(cex=0.7,labels=c("",paste(seq(0,max(PlotStorage$PriceIncreaseNeeded,na.rm=T),by=20),'%',sep='')))
-               ,subset=Year==1 & f=='F25',auto.key=T,xlab='% Price Increase Needed',
-               panel=function(x,y,...)
-               {
-                 panel.barchart(x,y,...)
-                 panel.abline(v=0,lty=2)
-               }))
+PricePlot<- (barchart(~PriceIncreaseNeeded | Species,group=m,main='B',data=PlotStorage,scales=list(cex=0.7,labels=c("",paste((seq(0,round(max(PlotStorage$PriceIncreaseNeeded,na.rm=T),-1),length.out=6)),'%',sep='')))
+                      ,subset=Year==1 & f=='F25',par.strip.text=list(cex=.75),auto.key=F,xlab=list(label='% Price Increase Needed',fontsize=10)))
+
+grid.arrange(IntPlot,PricePlot, nrow=2)
 
 dev.off()
 

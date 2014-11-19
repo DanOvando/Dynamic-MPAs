@@ -352,7 +352,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     pal <- colorRampPalette(c("blue", "red"))
     
-    print (levelplot(Biomass ~ Patch*Dummy ,ylab="",data=FlatFinalBiomass,col.regions=pal(2*NumPatches),
+    print (levelplot((Biomass+rnorm(NumPatches,0,1)) ~ Patch*Dummy ,ylab="",data=FlatFinalBiomass,col.regions=pal(2*NumPatches),
                      panel=function(x,...)
                      {
                        panel.levelplot(x,...)
@@ -361,6 +361,16 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
                          panel.abline(v=c(min(PatchNumbers[Patches$MPALocations==1],na.rm=T),max(PatchNumbers[Patches$MPALocations==1],na.rm=T)))
                        }
                      }))
+    
+    #     print (levelplot(Biomass ~ Patch*Dummy ,ylab="",data=FlatFinalBiomass,col.regions=pal(2*NumPatches),
+    #                      panel=function(x,...)
+    #                      {
+    #                        panel.levelplot(x,...)
+    #                        if (sum(Patches$MPALocations)>0)
+    #                        {
+    #                          panel.abline(v=c(min(PatchNumbers[Patches$MPALocations==1],na.rm=T),max(PatchNumbers[Patches$MPALocations==1],na.rm=T)))
+    #                        }
+    #                      }))
     dev.off()
     
     
@@ -380,6 +390,8 @@ Discount<- function(DataVec,DR,Time)
 {
   
   # DataVec<- PopTrajectory
+  #   Time<- dim(DataVec)[1]-1 #Get rid of stupid Timeframe thing, why did you do that
+  #   show(dim(DataVec))
   DiscValues<- DataVec*(1+DR)^-(0:(Time-1))
   NPV<- sum(DiscValues)
   CumNPV<- cumsum(DiscValues)
@@ -391,6 +403,24 @@ Length <- function(ages)
   Length<-lh$Linf*(1-exp(-1*lh$k*(ages-lh$t0)))
   return(Length)
 }
+
+# LengthWiError2<- function(Lengths,NumDraws) #Produce a distribution 
+# {
+#   
+#   HasNumber<- as.numeric(NumDraws>0)
+#   NumDraws[NumDraws==0]<- 1
+#   LenSD<- lh$VBSD*(1+lh$VBErrorSlope*Lengths/lh$Linf)
+# 
+#   LengthAtAgeDist<- ldply(lapply(1:length(Lengths),LengthDist,HasNumber=HasNumber,Lengths=Lengths,NumDraws=NumDraws,lh=lh,LenSD=LenSD))
+#   
+#   return(LengthAtAgeDist)
+# }
+# 
+# LengthDist<- function(l,HasNumber,Lengths,NumDraws,lh,LenSD)
+# {
+#   LengthAtAgeDist<- HasNumber*(Lengths[l]* rlnorm(NumDraws,mean=lh$VBErrorMean,sd=LenSD[l]))
+#   return(LengthAtAgeDist)
+# }
 
 LengthWiError<- function(Lengths,NumDraws) #Produce a distribution 
 {
@@ -436,7 +466,7 @@ LengthFrequency<- function(NumAtAge,MeanLengths)
 
 Weight<- function(Lengths,WeightForm)
 {
-  LengthDist<- LengthWiError(Lengths,1000)
+  LengthDist<- LengthWiError(Lengths,100)
   
   if (WeightForm=='Exponential')
   {
@@ -467,7 +497,7 @@ Fecundity <- function (Data,FecForm)
   
   if (FecForm=='Length')
   {
-    LengthDist<- LengthWiError(Data,1000)
+    LengthDist<- LengthWiError(Data,100)
     fecund<- rowMeans(lh$fa*LengthDist^lh$fb)
   }
   if (FecForm=='Weight')
@@ -490,7 +520,7 @@ Maturity <- function(Data,Mode)
     
     s95<- lh$LengthMa95
     
-    LengthDist<- LengthWiError(Data,1000)
+    LengthDist<- LengthWiError(Data,100)
     # mature<-rowMeans(round(1/(1+exp(lh$ma50*LengthDist+lh$ma95)),2))
     
     mature<- rowMeans(round(1/(1+exp(-log(19)*((LengthDist-s50)/(s95-s50)))),2))	
@@ -702,7 +732,7 @@ FishingSelectivity<- function(Lengths,s50,s95,NumDraws)
   # s95=45
   # NumDraws=1000
   
-  LengthDist<- LengthWiError(Lengths,1000)
+  LengthDist<- LengthWiError(Lengths,100)
   
   GroupSelectivity<- 1/(1+exp(-log(19)*((LengthDist-s50)/(s95-s50))))	
   
@@ -885,14 +915,14 @@ MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime)
   if (Mode=='FreeLogistic')
   {
     
-    
-    MPASize<-(OptSize/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
+    #     show(OptVector[3])
+    MPASize<- OptVector[3]*(1/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
     
   }
   if (Mode=='LockedLogistic')
   {
     
-    OptVector<- c(-2,EvalTime-1)
+    #     OptVector<- c(-2,EvalTime-1)
     MPASize<- (1/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
     
   }
@@ -912,7 +942,7 @@ MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime)
   return(MPASize)
 }
 
-FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime)
+FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime,Alpha)
 {
   
   #   OptVector<- TestOpt$par
@@ -924,38 +954,60 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
   #   OptMode='Function'
   #   BaseYields=BaseConditions$Yield[f]
   #   
-  Yields<- NULL
+  Yields<- rep(NA,TimeFrame)
+  
+  show(round(100*MPAFunction(OptVector,1:EvalTime,OptSize,Mode,EvalTime)))
   
   PassPop<- StartPop
   # 
   #   Patches<- BasePatches
   #   Patches$MPALocations<-  c(1,0)
-  for (t in 1:TimeFrame)
-  {
-    
-    if (OptMode=='Function')
+  
+#   if (OptVector[3]<=1 & OptVector[3]>=0)
+#   {
+#     
+    for (t in 1:TimeFrame)
     {
-      MPASize<- MPAFunction(OptVector,t,OptSize,Mode,EvalTime)
+      
+      if (OptMode=='Function')
+      {
+        MPASize<- MPAFunction(OptVector,t,OptSize,Mode,EvalTime)
+      }
+      
+      AssignNTZ(MPASize,ReservePosition)
+      
+      NewF<- MoveFleet(FTemp,MPASize,FleetSpill,0)
+      
+      NewPop<- GrowPopulation(PassPop,NewF,1,0,'eh')
+      
+      Yields[t]<- NewPop$Performance$Yields
+      
+      PassPop<- NewPop$FinalNumAtAge
+      
     }
     
-    AssignNTZ(MPASize,ReservePosition)
+    #   NPB<- Discount((Yields)-(BaseYields),Fleet$YieldDiscount,TimeFrame)$NPV  
+    RelativeNPV<- Discount((Yields),Fleet$YieldDiscount,TimeFrame)$NPV / Fleet$MSY_NPV
     
-    NewF<- MoveFleet(FTemp,MPASize,FleetSpill,0)
+    Objective<- Alpha*RelativeNPV + (1-Alpha)*(sum(colSums(PassPop*WeightAtAge))/sum(lh$CarryingCapacityWeight))
     
-    NewPop<- GrowPopulation(PassPop,NewF,1,0,'eh')
+    #Change this to be alpha*NPB+ (1-alpha)*(NP)
     
-    Yields[t]<- NewPop$Performance$Yields
+    Patches<<- BasePatches
     
-    PassPop<- NewPop$FinalNumAtAge
-    
-  }
-  NPB<- Discount((Yields)-(BaseYields),Fleet$YieldDiscount,TimeFrame)$NPV
+    #   return(-(NPB))
+    show(Objective)
+#   } #Close if statement on starting objecive
+#   if (OptVector[3]>1 | OptVector[3]<0)
+#   {
+#     Objective<- -OptVector[3]^2
+#   }
+#   
   
-  Patches<<- BasePatches
-  
-  return(-(NPB))
+  return(-(Objective))
   
 }
+
 
 FindMaxInterestRate<- function(InterestRate,LoanTime,LoanAmount,Surplus)
 {
