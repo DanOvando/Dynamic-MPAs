@@ -86,6 +86,34 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   t<- 1 #leave at 1
   
   NumberOfEggs<- Eggs(PopArray[1,,],FecundityAtAge,MaturityAtAge) #Produce eggs by patch    
+
+  if (is.na(lh$B0[1]))
+  {
+    PopArray[1,1,]<- lh$R0
+    
+    for (a in 2:(lh$MaxAge-1))
+    {
+      PopArray[1,a,]<- PopArray[1,a-1,]*(1-lh$m)
+    }
+    
+    PopArray[1,lh$MaxAge,]<- PopArray[1,lh$MaxAge-1,]*((1-lh$m)/(1-(1-lh$m)))
+    
+    lh$B0<<- colSums(PopArray[1,,]*WeightAtAge)
+    
+    lh$SSB0<<- colSums(PopArray[1,,]*WeightAtAge*MaturityAtAge)
+    
+    lh$SSB0_R0<<- lh$SSB0/lh$R0
+
+    lh$SSN0<<- colSums(PopArray[1,,]*MaturityAtAge)
+    
+  }
+  
+  SSB<- colSums(PopArray[1,,]*MaturityAtAge*WeightAtAge)
+  
+  if (grepl('Shark',Species))
+  {
+    SSB<- colSums(PopArray[1,,]*MaturityAtAge)
+  }
   
   while(t<TempTime) #Loop as long as you want
   {    
@@ -93,7 +121,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     RelocatedEggs<- MoveEggs(NumberOfEggs,'Common') #Move eggs
     
-    RecruitsPerPatch<- Recruits(RelocatedEggs,lh$DDForm,'Random',c(lh$RecDevMean,lh$RecDevSTD)) #Calculate recruits
+    RecruitsPerPatch<- Recruits(RelocatedEggs,SSB,lh$DDForm,'Random',c(lh$RecDevMean,lh$RecDevSTD),Species,lh) #Calculate recruits
     
     SelectivityAtAge<- FishingSelectivity(LengthAtAge,Fleet$s50,Fleet$s95,1000)	#Calculate selectivity curve
     
@@ -118,6 +146,14 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     PopArray[t+1,,]<- MoveAdults(PopArray[t+1,,],lh$Range,lh$MoveType)
     
     NumberOfEggs<- Eggs(PopArray[t+1,,],FecundityAtAge,MaturityAtAge) #Produce eggs by patch    
+    
+    SSB<- colSums(PopArray[t,,]*MaturityAtAge*WeightAtAge)
+    
+    if (grepl('Shark',Species))
+    {
+      SSB<- colSums(PopArray[t,,]*MaturityAtAge)
+    }
+    
     
     PopArray[t+1,1,]<- RecruitsPerPatch #Add recruits to population 
     
@@ -649,76 +685,128 @@ MoveAdults<- function(NatAge,Distance,MoveType) ### Work in progress, place hold
 }
 
 
-Recruits<- function(NofEggs,DDType,RecDevForm,RecDevValue) #Calculate recruitment
+Recruits<- function(NofEggs,SSB,DDType,RecDevForm,RecDevValue,Species,lh) #Calculate recruitment
 {
   #This function calculates recruitment incorporating density dependence of choice. So far only works with 'BH' (Beverton-Holt)
   #Eggs= number of eggs per patch
   #DDType= Density dependence type, so far only 'BH' will work
   #RecDevForm= the type of recruitment deviation, can either be random (from a distribution) or known (a fixed multiplier). 
   #RecDevValue= the values of the recruitment deviate. If form is random, this needs to be a vector, with the first value being the mean of the log normal distribution (probably leave at 0), and the second being the standard deviation 
-  
-  if (RecDevForm=='Random')
+  h<- lh$BH.Steepness
+  if (grepl('Shark',DDType))
   {
-    RecDeviate<- rlnorm(1,meanlog=RecDevValue[1],sdlog=RecDevValue[2])  #Calculate log normal recruitment deviate (not patch specific yet)
+#     browser()
+#     Recs<- (lh$R0*SSB*5)/(lh$SSN0*5+(2.26-1)*SSB*5)
+    Recs<- (0.8*lh$R0*h*SSB)/(0.2*lh$SSN0*(1-h)+(h-0.2)*SSB)
+    
   }
   
-  if (RecDevForm=='Known')
+  if (grepl('Babcock',DDType))
   {
-    RecDeviate<- RecDevValue
+    if (DDType=='Babcock1')
+    {
+      Recs<- (0.8*lh$R0*h*SSB)/(0.2*lh$SSB0*(1-h)+(h-0.2)*SSB)
+    }
+    
+    if (DDType=='Babcock2')
+    {
+      Recs<- rep((1/NumPatches)*((0.8*sum(lh$R0)*h*sum(SSB))/(0.2*sum(lh$SSB0)*(1-h)+(h-0.2)*sum(SSB))),NumPatches)
+    }
+    if (DDType=='Babcock3')
+    {
+      Recs<- rep((1/NumPatches)*sum((0.8*lh$R0*h*SSB)/(0.2*lh$SSB0*(1-h)+(h-0.2)*SSB)),NumPatches)
+    }
+    if (DDType=='Babcock4')
+    {
+      Recs<- ((0.8*lh$R0*h)/(0.2*lh$SSB0*(1-h)+(h-0.2)*SSB))*(1/NumPatches)*sum(SSB)
+      
+    }
+    if (DDType=='Babcock5')
+    {
+      Recs<- MoveEggs((0.8*lh$R0*h*SSB)/(0.2*lh$SSB0*(1-h)+(h-0.2)*SSB),'Common')
+      
+    }
+    
   }
   
-  if (DDType=='BH')
+  if (Species=='Generic')
   {
-    
-    #     RelativePatchSizes<- Patches$PatchSizes/sum(Patches$PatchSizes)
-    
-    RelativePatchSizes<- 1
-    
-    Alpha<- (4* lh$BH.Steepness*RelativePatchSizes*lh$R0)/(5* lh$BH.Steepness-1)
-    
-    Beta<- (RelativePatchSizes*lh$R0)*(1-lh$BH.Steepness)/(5* lh$BH.Steepness-1)
-    
-    # show(paste('Alpha is ',Alpha))
-    
-    # show(paste('Beta is ',Beta))
-    
-    # Alpha<- (RelativePatchSizes*lh$B0)*((1-lh$BH.Steepness)/(4*lh$BH.Steepness*(RelativePatchSizes*lh$R0)))
-    
-    # Beta<- (5*lh$BH.Steepness-1)/(4*lh$BH.Steepness*(RelativePatchSizes*lh$R0))
-    
-    
-    
-    if (lh$LarvalChoice==1)
+    if (RecDevForm=='Random')
     {
-      Recs<- ((Alpha*NofEggs)/(Beta+NofEggs)) * RecDeviate 
-      
-      # Recs<- (NofEggs/(Alpha+Beta*NofEggs)) * RecDeviate 
-      
+      RecDeviate<- rlnorm(1,meanlog=RecDevValue[1],sdlog=RecDevValue[2])  #Calculate log normal recruitment deviate (not patch specific yet)
     }
-    if (lh$LarvalChoice==0)
+    
+    if (RecDevForm=='Known')
     {
-      Recs<- ((Alpha*NofEggs)/(Beta+NofEggs)) * RecDeviate * Patches$HabQuality 
-      
-      # Recs<- (NofEggs/(Alpha+Beta*NofEggs)) * RecDeviate * Patches$HabQuality 
-      
+      RecDeviate<- RecDevValue
     }
-    Recs[is.na(Recs)]<- 0
+    
+    if (DDType=='BH')
+    {
+      
+      #     RelativePatchSizes<- Patches$PatchSizes/sum(Patches$PatchSizes)
+      
+      RelativePatchSizes<- 1
+      
+      Alpha<- (4* lh$BH.Steepness*RelativePatchSizes*lh$R0)/(5* lh$BH.Steepness-1)
+      
+      Beta<- (RelativePatchSizes*lh$R0)*(1-lh$BH.Steepness)/(5* lh$BH.Steepness-1)
+      
+      # show(paste('Alpha is ',Alpha))
+      
+      # show(paste('Beta is ',Beta))
+      
+      # Alpha<- (RelativePatchSizes*lh$B0)*((1-lh$BH.Steepness)/(4*lh$BH.Steepness*(RelativePatchSizes*lh$R0)))
+      
+      # Beta<- (5*lh$BH.Steepness-1)/(4*lh$BH.Steepness*(RelativePatchSizes*lh$R0))
+      
+      
+      
+      if (lh$LarvalChoice==1)
+      {
+        Recs<- ((Alpha*NofEggs)/(Beta+NofEggs)) * RecDeviate 
+        
+        # Recs<- (NofEggs/(Alpha+Beta*NofEggs)) * RecDeviate 
+        
+      }
+      if (lh$LarvalChoice==0)
+      {
+        Recs<- ((Alpha*NofEggs)/(Beta+NofEggs)) * RecDeviate * Patches$HabQuality 
+        
+        # Recs<- (NofEggs/(Alpha+Beta*NofEggs)) * RecDeviate * Patches$HabQuality 
+        
+      }
+      Recs[is.na(Recs)]<- 0
+    }
+    if (DDType=='RASS-BH')
+    {
+      RelativePatchSizes<- Patches$PatchSizes/sum(Patches$PatchSizes)
+      Alpha<- lh$RassAlpha
+      Beta<- lh$RassBeta*RelativePatchSizes    
+      if (lh$LarvalChoice==1)
+      {
+        Recs<- (NofEggs*Alpha)*(1/(1+Beta*NofEggs)) * RecDeviate 
+      }
+      if (lh$LarvalChoice==0)
+      {
+        Recs<- (NofEggs*Alpha)*(1/(1+Beta*NofEggs)) * RecDeviate* Patches$HabQuality 
+      }
+      Recs[is.na(Recs)]<- 0
+    }
   }
-  if (DDType=='RASS-BH')
-  {
-    RelativePatchSizes<- Patches$PatchSizes/sum(Patches$PatchSizes)
-    Alpha<- lh$RassAlpha
-    Beta<- lh$RassBeta*RelativePatchSizes    
-    if (lh$LarvalChoice==1)
-    {
-      Recs<- (NofEggs*Alpha)*(1/(1+Beta*NofEggs)) * RecDeviate 
-    }
-    if (lh$LarvalChoice==0)
-    {
-      Recs<- (NofEggs*Alpha)*(1/(1+Beta*NofEggs)) * RecDeviate* Patches$HabQuality 
-    }
-    Recs[is.na(Recs)]<- 0
-  }
+#   if (Species=='Yellowtail Snapper')
+#   {
+#     
+#     alpha<- ((4*lh$BH.Steepness*lh$SSB0)/lh$SSB0_R0)/(5*lh$BH.Steepness-1)
+#     
+#     beta<- (lh$SSB0*(1-lh$BH.Steepness))/(5*lh$BH.Steepness-1)
+#     
+#     Recs<- (alpha*SSB)/(beta+SSB)
+#     
+#   }
+#   
+  
+  
   return(Recs)
   
 }
@@ -902,7 +990,7 @@ LoanPayment<- function(principle,rate,nyears,ppyear)
   return(lp)
 }
 
-MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime)
+MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime,GrowMode)
 {
   # MPASize<- (OptVector[1]+OptVector[2]*t+(OptVector[3]*t)^2)/1000
   
@@ -912,11 +1000,26 @@ MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime)
   
   # OptVector<- c(5,6)
   
+  
   if (Mode=='FreeLogistic')
   {
     
-    #     show(OptVector[3])
-    MPASize<- OptVector[3]*(1/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
+    #     MPASize<- OptVector[3]*(1/(1+exp(-log(19)*((t-OptVector[1])/(OptVector[2]-OptVector[1])))))
+    
+    #     MPASize<- OptVector[3]*(1/(1+exp(-log(19)*((t-OptVector[1])/((OptVector[1]+OptVector[2])-OptVector[1])))))
+    
+    MPAFactor<- (1/(1+exp(-log(19)*((t-OptVector[1])/((OptVector[1]+OptVector[2])-OptVector[1])))))
+    
+    if (GrowMode=='Shrink')
+    {
+      MPAFactor<- MPAFactor+1
+    }
+    
+    MPASize<- min(OptSize*MPAFactor,1)
+    
+    #     MPASize<- min(OptSize[1]*t+OptSize[2],OptSize)a
+    
+    #     show(OptVector[2]>OptVector[1])
     
   }
   if (Mode=='LockedLogistic')
@@ -934,6 +1037,41 @@ MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime)
     MPASize<- Slope*t+OptVector[1]
     
   }
+  if (Mode=='Logit Grow')
+  {
+    MPASize<- pmax(0,pmin(1,(exp(OptVector[1]*t)/(OptVector[2]+exp(OptVector[1]*t)) - 1/(1+OptVector[2]))+OptVector[3]))
+  }
+  if (Mode=='Logit Shrink')
+  {
+    
+    MPASize<- 1-pmax(0,pmin(1,(exp(OptVector[1]*t)/(OptVector[2]+exp(OptVector[1]*t)) - 1/(1+OptVector[2]))+OptVector[3]))
+    
+  }
+  if (Mode=='LinearPlus')
+  {
+    #     Intercept=exp(OptVector[1])/(1+exp(OptVector[1]))
+    Intercept=OptVector[1]
+    
+    FlipYear<- max(1,min(round(EvalTime*OptVector[2]),EvalTime))
+    
+    Slope<- (OptSize-Intercept)/FlipYear
+    
+    MPASize<- Slope*t+Intercept
+    
+    MPASize<- pmax(0,pmin(1,MPASize))
+    
+    if (length(t)==1)
+    {
+      #       if(t>=OptVector[2]){MPASize<- OptSize}
+      if(t>=FlipYear){MPASize<- OptSize}
+      
+    }
+    if (length(t)>1)
+    {
+      MPASize[t>FlipYear]<- OptSize
+    }
+  }
+  
   
   # 	MPASize<- pmin(MPASize,1)
   
@@ -942,7 +1080,7 @@ MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime)
   return(MPASize)
 }
 
-FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime,Alpha)
+FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime,Alpha,GrowMode)
 {
   
   #   OptVector<- TestOpt$par
@@ -956,22 +1094,23 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
   #   
   Yields<- rep(NA,TimeFrame)
   
-  show(round(100*MPAFunction(OptVector,1:EvalTime,OptSize,Mode,EvalTime)))
+  #   show(round(100*MPAFunction(OptVector,1:EvalTime,OptSize,Mode,EvalTime)))
   
   PassPop<- StartPop
   # 
   #   Patches<- BasePatches
   #   Patches$MPALocations<-  c(1,0)
   
-#   if (OptVector[3]<=1 & OptVector[3]>=0)
-#   {
-#     
+  #   if (OptVector[1]!=OptVector[2] & (OptVector[3]<=1 & OptVector[3]>=0))  
+  if (OptVector[1]!=OptVector[2])    
+  {
+    
     for (t in 1:TimeFrame)
     {
       
       if (OptMode=='Function')
       {
-        MPASize<- MPAFunction(OptVector,t,OptSize,Mode,EvalTime)
+        MPASize<- MPAFunction(OptVector,t,OptSize,Mode,EvalTime,GrowMode)
       }
       
       AssignNTZ(MPASize,ReservePosition)
@@ -986,24 +1125,36 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
       
     }
     
-    #   NPB<- Discount((Yields)-(BaseYields),Fleet$YieldDiscount,TimeFrame)$NPV  
-    RelativeNPV<- Discount((Yields),Fleet$YieldDiscount,TimeFrame)$NPV / Fleet$MSY_NPV
+    NPB<- Discount((Yields)-(BaseYields),Fleet$YieldDiscount,TimeFrame)$NPV  
     
-    Objective<- Alpha*RelativeNPV + (1-Alpha)*(sum(colSums(PassPop*WeightAtAge))/sum(lh$CarryingCapacityWeight))
+    #     show(Discount((Yields),Fleet$YieldDiscount,TimeFrame)$NPV)
+    
+    #     RelativeNPV<- Yields[length(Yields)]
+#     RelativeNPV<- Discount((Yields),Fleet$YieldDiscount,TimeFrame)$NPV
+    #     RelativeNPV<- Discount((Yields),Fleet$YieldDiscount,TimeFrame)$NPV / Fleet$MSY_NPV
+    
+#     RelativeNPV<- Discount((Yields)-(BaseYields),Fleet$YieldDiscount,TimeFrame)$NPV  
+
+    RelativeNPV<- Discount((Yields)-(BaseYields),0.05,TimeFrame)$NPV  
+
+
+    Objective<- RelativeNPV
+    
+#     Objective<- Alpha*RelativeNPV + (1-Alpha)*(sum(colSums(PassPop*WeightAtAge))/sum(lh$CarryingCapacityWeight))
     
     #Change this to be alpha*NPB+ (1-alpha)*(NP)
     
     Patches<<- BasePatches
     
-    #   return(-(NPB))
-    show(Objective)
-#   } #Close if statement on starting objecive
-#   if (OptVector[3]>1 | OptVector[3]<0)
-#   {
-#     Objective<- -OptVector[3]^2
-#   }
-#   
+    
+  } #Close if statement on starting objecive
+  #   if (OptVector[1]==OptVector[2] | (OptVector[3]>1 | OptVector[3]<0))
+  #   if (OptVector[1]==OptVector[2])
+  #   {
+  #     Objective<- -(OptVector[1]*OptVector[2])^2
+  #   }
   
+  #   show(Objective)
   return(-(Objective))
   
 }
