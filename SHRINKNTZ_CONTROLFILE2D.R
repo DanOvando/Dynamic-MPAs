@@ -22,15 +22,15 @@ dir.create(FigureFolder)
 dir.create(ResultFolder)
 
 FontSize<- 14 #Font size for figures
-Font<- "Palatino" #Font type for figures
+Font<- "Helvetica" #Font type for figures
 
 ####### SET OPERATING PARAMETERS ########
-PopTolerance<- 0.01 #the cutoff for identifying point where population stops changing
+PopTolerance<- 1 #the cutoff for identifying point where population stops changing
 InitialPopulation<- 1000 #Seed for initial population 
 CollapseThreshold<- 0.1
 LookAtLengths<- 0
 ReservePosition<- 'Center'
-OptTime<- 75 #Time Horizon to optimize over
+OptTime<- 65 #Time Horizon to optimize over
 Alpha<- 0.5
 
 ####### Load in Population Parameters ########
@@ -40,6 +40,7 @@ source(paste(InputFolder,'GenericLifeHistory.R',sep='')) #load in population par
 
 source('GASP2D.R') #source GASP functions
 lh$Bmsy<- -999
+lh$SSB0<- NA
 LengthAtAge<- Length(1:lh$MaxAge) #Calculate length at age vector
 WeightAtAge<- Weight(LengthAtAge,lh$WeightForm) #Calculate weight at age vector
 FecundityAtAge<- Fecundity(LengthAtAge,'Length') #Calculate Fecundity at age vector
@@ -53,8 +54,8 @@ MaturityAtAge<- Maturity(1:lh$MaxAge, MaturityMode) # Calculate maturity at age 
 
 # ####### Set Fishing Fleet/Management Parameters ########
 Fleet<- NULL
-Fleet$YieldDiscount<- 0.5
-Fleet$BiomassDiscount<- 0.05
+Fleet$YieldDiscount<- 0
+Fleet$BiomassDiscount<- 0
 Fleet$SizeLimit<- .001
 Fleet$s50<- .001
 Fleet$s95<- .002
@@ -68,6 +69,10 @@ Patches$SizeLocations<- 0 #Place the sizes where you want them. Entering 0 here 
 # Patches$c[Patches$SizeLocations]<- Patches$PatchSizes
 Patches$MPALocations<- rep(0,NumPatches) #Locations of MPAs in the patches. 
 Patches$HabQuality<- rep(1,NumPatches) #Habitat quality, change to vector of number of your choice if needed
+
+lh$R0<- 5000
+
+lh$R0<- lh$R0*Patches$HabQuality
 
 if (max(Patches$SizeLocations)>NumPatches | max(Patches$MPALocations)>NumPatches)
 {
