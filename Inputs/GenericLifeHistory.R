@@ -10,14 +10,22 @@ lh$MaxAge <- 23
 lh$m <- rep(lh$m,lh$MaxAge)  # blaber et al estimate  Z= .11    so i cut this in half for m???
 
 lh$CarryingCapacity<- -999
- 
+lh$SSB0_R0<- -999 
 ###VonBert Growth Params
 lh$Linf <- 618
 lh$k <- 0.133
 lh$t0 <- -3.132 
-lh$VBSD<- 0.1 #Base standard deviation of the length curve
+# lh$VBSD<- 0.1 #Base standard deviation of the length curve
+# lh$VBSD<- 0.1 #Base standard deviation of the length curve
+# 
+# lh$VBErrorMean<- 0
+# lh$VBErrorSlope <- 0.1 #Sets the responsiveness of the SD parameter to age 0 nullifies effect, 1 makes increase in SD decrease with age
+lh$VBSD<- 0 #Base standard deviation of the length curve
+
 lh$VBErrorMean<- 0
-lh$VBErrorSlope <- 0.1 #Sets the responsiveness of the SD parameter to age 0 nullifies effect, 1 makes increase in SD decrease with age
+lh$VBErrorSlope <- 0 #Sets the responsiveness of the SD parameter to age 0 nullifies effect, 1 makes increase in SD decrease with age
+
+
 
 ###Weight at Age
 lh$wa <- 4.08e-8
@@ -51,8 +59,9 @@ lh$MoveType<- 'Simple'
 
 ###Recruitment
 lh$DDForm<- 'BH'
-lh$B0<- 1000 #Virgin biomass
-lh$R0<- lh$B0*(1-exp(-lh$m[1])) #Recruitment must equal deaths at EQ
+lh$B0<- NA #Virgin biomass
+lh$R0<- NA
+lh$SSB0_R0<- NA
 lh$SexRatio<- 0.5
 lh$LarvalChoice<- 0 #Whether larvae can choose to target good habitat. 1 means that eggs move towards better habitat, 0 means that recruitment is affected by habitat
  lh$BH.Steepness<- 0.697 #Beverton-holt steepness parameter average of rockfish in RAM
