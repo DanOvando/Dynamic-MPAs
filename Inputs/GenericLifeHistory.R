@@ -20,7 +20,7 @@ lh$t0 <- -3.132
 # 
 # lh$VBErrorMean<- 0
 # lh$VBErrorSlope <- 0.1 #Sets the responsiveness of the SD parameter to age 0 nullifies effect, 1 makes increase in SD decrease with age
-lh$VBSD<- 0 #Base standard deviation of the length curve
+lh$VBSD<- 0.05 #Base standard deviation of the length curve
 
 lh$VBErrorMean<- 0
 lh$VBErrorSlope <- 0 #Sets the responsiveness of the SD parameter to age 0 nullifies effect, 1 makes increase in SD decrease with age

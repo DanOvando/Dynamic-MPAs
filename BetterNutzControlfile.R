@@ -25,7 +25,7 @@ FontSize<- 14 #Font size for figures
 Font<- "Helvetica" #Font type for figures
 
 ####### SET OPERATING PARAMETERS ########
-PopTolerance<- 1 #the cutoff for identifying point where population stops changing
+PopTolerance<- .1 #the cutoff for identifying point where population stops changing
 InitialPopulation<- 1000 #Seed for initial population 
 CollapseThreshold<- 0.1
 LookAtLengths<- 0
@@ -54,7 +54,7 @@ MaturityAtAge<- Maturity(1:lh$MaxAge, MaturityMode) # Calculate maturity at age 
 
 # ####### Set Fishing Fleet/Management Parameters ########
 Fleet<- NULL
-Fleet$YieldDiscount<- 0
+Fleet$YieldDiscount<- 0.1
 Fleet$BiomassDiscount<- 0
 Fleet$SizeLimit<- .001
 Fleet$s50<- .001
