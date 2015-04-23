@@ -1,7 +1,7 @@
 RunReserve<- function(Run,BasePatches)
 {
       
-
+Run<- RunMatrix[1,]
   for (d in 1:dim(Run)[2])
   {
     eval(parse(text=paste(colnames(Run)[d],'<- I(Run[d])',sep='')))
