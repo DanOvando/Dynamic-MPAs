@@ -38,7 +38,7 @@ Alpha<- 0.5
 # source(paste(InputFolder,Species,'LifeHistory.R',sep='')) #load in population parameters
 source(paste(InputFolder,'GenericLifeHistory.R',sep='')) #load in population parameters
 
-source('GASP2D.R') #source GASP functions
+source('GASP.R') #source GASP functions
 lh$Bmsy<- -999
 lh$SSB0<- NA
 LengthAtAge<- Length(1:lh$MaxAge) #Calculate length at age vector
@@ -59,6 +59,7 @@ Fleet$BiomassDiscount<- 0
 Fleet$SizeLimit<- .001
 Fleet$s50<- .001
 Fleet$s95<- .002
+FleetSpill<- 1
 
 
 ####### LOAD IN Habitat Structure and MPAs  ########

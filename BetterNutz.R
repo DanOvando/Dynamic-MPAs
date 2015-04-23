@@ -19,6 +19,16 @@ library(broom)
 
 ####### READ IN CONTROL FILE ########
 
+PopTolerance<- .1 #the cutoff for identifying point where population stops changing
+InitialPopulation<- 1000 #Seed for initial population 
+CollapseThreshold<- 0.1
+LookAtLengths<- 0
+ReservePosition<- 'Center'
+OptTime<- 65 #Time Horizon to optimize over
+Alpha<- 0.5
+
+TimeToRun<- OptTime+1
+
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
 BatchFolder<- 'Results/3.0/'
 
@@ -27,14 +37,6 @@ RunAnalysis<- 1
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
 
 LongDataNames<- c('Species','Movement','Steepness','MPAScenario','FishingScenario','FvFmsy','OptNTZ','NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
-
-AllSpeciesStorage<- as.data.frame(matrix(NA,nrow=0,ncol=18))
-
-colnames(AllSpeciesStorage)<- c('Species','m','f','Frate','FracNTZ','Year','Yield','Biomass','Numbers','SQYield','SQNumbers','SQBiomass','OptNTZYield','OptNTZNumbers','OptNTZBiomass','OptNTZ','YieldBalance','NPB')
-
-AllSpeciesExperimentResults<- as.data.frame(matrix(NA,nrow=0,ncol=length(LongDataNames)))
-
-colnames(AllSpeciesExperimentResults)<- c(LongDataNames)
 
 dir.create(paste(BatchFolder,sep=''))
 
@@ -58,7 +60,15 @@ colnames(SystemBmsyStorage)<- c('Species','Bmsy')
 
 SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
 
-# SpeciesList<- SpeciesList[1:2]
+SpeciesList<- SpeciesList[1:2]
+
+NumFs<- 1
+
+TotalStorage<- as.data.frame(matrix(NA,nrow= NumFs*length(MPANames)*TimeToRun*length(SpeciesList),ncol=16))
+
+colnames(TotalStorage)<- c('Species','m','f','Frate','FracNTZ','Year','Yield','Biomass','Numbers','SQYield','SQNumbers','SQBiomass','OptNTZYield','OptNTZNumbers','OptNTZBiomass','OptNTZ')
+
+c<- 0
 
 if (RunAnalysis==1)
 {
@@ -143,7 +153,7 @@ if (RunAnalysis==1)
     
     Fmsy$par<- exp(Fmsy$minimum) 
     
-    BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',1,'Bmsy Run') #Bmsy Population
+    BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',0,'Bmsy Run') #Bmsy Population
     
     lh$Nmsy<- (colSums(BmsyPopulation$FinalNumAtAge)) #Nmsy
     
@@ -151,7 +161,7 @@ if (RunAnalysis==1)
     
     SystemBmsyStorage[s,]<- data.frame(Species,sum(lh$Bmsy),stringsAsFactors=F)
     
-    MsyFishing<- GrowPopulation(BmsyPopulation$FinalNumAtAge,rep(Fmsy$par,NumPatches),OptTime,1,'MSY Run') #Bmsy Population
+    MsyFishing<- GrowPopulation(BmsyPopulation$FinalNumAtAge,rep(Fmsy$par,NumPatches),OptTime,0,'MSY Run') #Bmsy Population
     
     Fleet$MSY_NPV<- MsyFishing$Performance$DiscYields$NPV
     
@@ -159,8 +169,7 @@ if (RunAnalysis==1)
     
     F25$par<- exp(F25$minimum)
     
-    
-    B25Population<- GrowPopulation(UnfishedPopulation, rep(F25$par,NumPatches),'EQ',1,'B25 Run')
+    B25Population<- GrowPopulation(UnfishedPopulation, rep(F25$par,NumPatches),'EQ',0,'B25 Run')
     
     ####### RUN MPA SIMULATIONS ########
     
@@ -168,65 +177,24 @@ if (RunAnalysis==1)
     
     colnames(MPAs)<- MPANames
     
-    TimeToRun<-dim(MPAs)[1]
+#     TimeToRun<-dim(MPAs)[1]
     
     EvalTime<- OptTime #Time span to evaluate results on
     RunTime<- 'Custom'
     PropNames<- NULL
     for (m in 1:dim(MPAs)[2])
     {
-      PropNames[m]<-MPANames[m]
-      #       PropNames[m]<- paste(round(MPAs[m,2:TimeToRun],2),collapse=':')
-      
+      PropNames[m]<-MPANames[m]      
     }
     
-    #     FScenarios<- c(F50$par, F25$par) #load in fishing scenarios
-    
     FScenarios<- c(F25$par) #load in fishing scenarios
-    
-    ExperimentResults<-(array(NA,dim=c(dim(MPAs)[2],length(FScenarios),length(DataNames)))) #blank
-    
-    #     dimnames(ExperimentResults)<- list(PropNames,c('F50','F25'),DataNames )
-    
-    dimnames(ExperimentResults)<- list(PropNames,c('F25'),DataNames )
-    
-    FlatExperimentResults<- as.data.frame(matrix(NA,nrow=length(FScenarios)*dim(MPAs)[2],ncol=length(LongDataNames)))
-    
-    colnames(FlatExperimentResults)<- c(LongDataNames)
     
     BaseConditions<- as.data.frame(matrix(NA,nrow= length(FScenarios),ncol=3))
     colnames(BaseConditions)<- c('Yield','Biomass','Numbers')
     
     OptimalConditions<- as.data.frame(matrix(NA,nrow= length(FScenarios),ncol=3))
     colnames(OptimalConditions)<- c('Yield','Biomass','Numbers')
-    
-    #     if (RunTime=='Custom')
-    #     {
-    #       TimeToRun<- 75
-    #     }
-    #     
-    
-    BaseRelativeNumbers<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    BaseRelativeYield<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    BaseRelativeBiomass<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    
-    RawNumbers<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    RawYield<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    RawBiomass<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    
-    OptRelativeNumbers<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    OptRelativeYield<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    OptRelativeBiomass<- array(NA,dim=c(dim(MPAs)[2],length(FScenarios),TimeToRun))
-    
-    
-    FleetSpill<- 1
-    
-    TotalStorage<- as.data.frame(matrix(NA,nrow<- length(FScenarios)*dim(MPAs)[2]*TimeToRun,ncol=18))
-    
-    colnames(TotalStorage)<- c('Species','m','f','Frate','FracNTZ','Year','Yield','Biomass','Numbers','SQYield','SQNumbers','SQBiomass','OptNTZYield','OptNTZNumbers','OptNTZBiomass','OptNTZ','YieldBalance','NPB')
-    
-    c<-0
-    
+        
     cc<- 0
     
     for (f in 1:length(FScenarios)) 
@@ -346,13 +314,11 @@ if (RunAnalysis==1)
       
       Patches<- BasePatches  
       
-      #       Patches$MPALocations<- c(1,0) #Create an MPA
-      
       AssignNTZ(OptNTZSize$par,ReservePosition)
       
       FTemp<- MoveFleet(FScenarios[f], OptNTZSize$par,FleetSpill,0)
       
-      OptPop<- GrowPopulation(StartPop,FTemp,'EQ',1,paste('Opt MPA is',round(OptNTZSize$par,2),'when FvFmsy is',round(FScenarios[f]/Fmsy$par,2)))
+      OptPop<- GrowPopulation(StartPop,FTemp,'EQ',0,paste('Opt MPA is',round(OptNTZSize$par,2),'when FvFmsy is',round(FScenarios[f]/Fmsy$par,2)))
       
       OptimalConditions$Yield[f]<-(OptPop$Performance$Yields[length(OptPop$Performance$Yields)])
       
@@ -372,7 +338,6 @@ if (RunAnalysis==1)
       
       MPAs$OptNTZ<- c(0, MPAFunction(as.matrix(BestGuess),1:OptTime, OptNTZSize$par,'LinearPlus',EvalTime))
       
-      
       MPAs$CatchShareEqNTZ<- MPAs$EqNTZ
       
       pdf(file=paste(FigureFolder,'FvFmsy is',round(FScenarios[f]/Fmsy$par,2),' MPAs.pdf'),family=Font,pointsize=12,width=6,height=4)
@@ -381,18 +346,11 @@ if (RunAnalysis==1)
       legend('topright',inset=c(-.3,0),legend=MPANames,col=rainbow(1.5*dim(MPAs)[2])[1:dim(MPAs)[2]],lty=1,cex=.5)
       dev.off()
       
-      #       PropNames<- NULL
-      #       for (mm in 1:dim(MPAs)[1])
-      #       {
-      #         PropNames[mm]<- paste(round(MPAs[mm,2:dim(MPAs)[2]],2),collapse=':')
-      #       }
-      #       
       for (m in 1:dim(MPAs)[2])
       {
         
         show(paste('M is ',m))
-        ResultStorage<- as.data.frame(matrix(NA,nrow=dim(MPAs)[1],ncol=3))
-        colnames(ResultStorage)<- c('Yield','Biomass','Numbers')
+        
         TempPop<- StartPop
         Patches<- BasePatches
         
@@ -423,161 +381,35 @@ if (RunAnalysis==1)
           }
           
           PassPop<- GrowPopulation(TempPop,FVec,1,0,'TEST') #grow the new population
+          
           TempPop<- PassPop$FinalNumAtAge
-          ResultStorage[y,1]<- (PassPop$Performance$Yields[length(PassPop$Performance$Yields)])
-          ResultStorage[y,2]<- (sum(WeightAtAge %*% PassPop$FinalNumAtAge))
-          ResultStorage[y,3]<- (sum(PassPop$FinalNumAtAge))
           
-          # NPBTimeSeries<- Discount(ResultStorage$Yield[1:y]-BaseConditions$Yield[f],Fleet$YieldDiscount,length(ResultStorage$Yield))$NPV#Yield balance through 10
+          #           NPBTimeSeries<- Discount(ResultStorage$Yield[1:y]-BaseConditions$Yield[f],Fleet$YieldDiscount,y)$NPV#Yield balance through 10
           
-          NPBTimeSeries<- Discount(ResultStorage$Yield[1:y]-BaseConditions$Yield[f],Fleet$YieldDiscount,y)$NPV#Yield balance through 10
-          
-          #           if (f==2)
-          #           {browser()}
-          TotalStorage[c,]<-data.frame(SpeciesList[s],m,f,FScenarios[f],CurrentMPA,y,PassPop$Performance$MeanYield,PassPop$Performance$MeanBiomass,PassPop$Performance$MeanNumbers, BaseConditions$Yield[f],BaseConditions$Numbers[f], BaseConditions$Biomass[f], OptimalConditions$Yield[f], OptimalConditions$Numbers[f], OptimalConditions$Biomass[f], OptNTZSize$par, ResultStorage$Yield[y]-BaseConditions$Yield[f] ,NPBTimeSeries,stringsAsFactors=F)
+          TotalStorage[c,]<-data.frame(SpeciesList[s],MPANames[m],f,FScenarios[f],CurrentMPA,y,PassPop$Performance$MeanYield,PassPop$Performance$MeanBiomass,PassPop$Performance$MeanNumbers, BaseConditions$Yield[f],BaseConditions$Numbers[f], BaseConditions$Biomass[f], 
+                                       OptimalConditions$Yield[f], OptimalConditions$Numbers[f], OptimalConditions$Biomass[f], OptNTZSize$par,stringsAsFactors=F)
           
         } #Close TimeToRun loop   
-        #Calculate relative performance
-        BaseRelativeYield[m,f,]<- ResultStorage$Yield/BaseConditions$Yield[f]-1
-        BaseRelativeNumbers[m,f,]<- ResultStorage$Numbers/BaseConditions$Numbers[f]-1
-        BaseRelativeBiomass[m,f,]<- ResultStorage$Biomass/BaseConditions$Biomass[f]-1
         
-        OptRelativeYield[m,f,]<- ResultStorage$Yield/OptimalConditions$Yield[f]-1
-        OptRelativeNumbers[m,f,]<- ResultStorage$Numbers/OptimalConditions$Numbers[f]-1
-        OptRelativeBiomass[m,f,]<- ResultStorage$Biomass/OptimalConditions$Biomass[f]-1
-        
-        RawYield[m,f,]<- ResultStorage$Yield
-        RawNumbers[m,f,]<- ResultStorage$Numbers
-        RawBiomass[m,f,]<- ResultStorage$Biomass
-        
-        ExperimentResults[m,f,1]<- Discount(ResultStorage$Yield,Fleet$YieldDiscount,length(ResultStorage$Yield))$NPV #Discounted NPV
-        ExperimentResults[m,f,2]<- Discount(ResultStorage$Biomass,Fleet$BiomassDiscount,length(ResultStorage$Yield))$NPV #Discounted Biomass
-        ExperimentResults[m,f,3]<- mean(ResultStorage$Yield) #Average yield
-        ExperimentResults[m,f,4]<- mean(ResultStorage$Biomass) #Average biomass
-        ExperimentResults[m,f,5]<- min(ResultStorage$Numbers) #Average numbers
-        YearToYearChange<-(ResultStorage$Yield[2:length( ResultStorage$Yield)]-ResultStorage$Yield[1:(length( ResultStorage$Yield)-1)])/ResultStorage$Yield[1:(length( ResultStorage$Yield)-1)]
-        YearToYearChange[is.finite(YearToYearChange)==F]<- 0
-        ExperimentResults[m,f,6]<- 	sd(YearToYearChange)	
-        ExperimentResults[m,f,7]<- 	mean(YearToYearChange)	 
-        ExperimentResults[m,f,8]<- 	100*mean(BaseRelativeYield[m,f,]>0)	 
-        ExperimentResults[m,f,9]<- 	100*mean(BaseRelativeNumbers[m,f,]>0)	 
-        ExperimentResults[m,f,10]<- 	100*mean(BaseRelativeYield[m,f,])	 
-        ExperimentResults[m,f,11]<- 	100*mean(BaseRelativeNumbers[m,f,])	 
-        ExperimentResults[m,f,12]<- 	100*mean(BaseRelativeNumbers[m,f,]>0 & BaseRelativeYield[m,f,]>0)	 
-        
-        ExperimentResults[m,f,13]<- ResultStorage$Yield[6]-BaseConditions$Yield[f] #Yield balance in year 5
-        
-        ExperimentResults[m,f,14]<- ResultStorage$Biomass[6]-BaseConditions$Biomass[f] #Biomass balance in year 5
-        
-        ExperimentResults[m,f,15]<- Discount(ResultStorage$Yield[2:6]-BaseConditions$Yield[f],Fleet$YieldDiscount,5)$NPV #Yield balance through year 5
-        
-        ExperimentResults[m,f,16]<- ResultStorage$Yield[11]-BaseConditions$Yield[f] #Yield balance in year 10
-        
-        ExperimentResults[m,f,17]<- ResultStorage$Biomass[11]-BaseConditions$Biomass[f] #Biomass balance in year 10
-        
-        ExperimentResults[m,f,18]<- Discount(ResultStorage$Yield[2:11]-BaseConditions$Yield[f],Fleet$YieldDiscount,10)$NPV # through 10
-        
-        ExperimentResults[m,f,19]<- which((ResultStorage$Yield[2:TimeToRun]-BaseConditions$Yield[f])>=0)[1] #Years to positive yield balance
-        
-        # ExperimentResults[m,f,19]<- which((ResultStorage$Yield/BaseConditions$Yield[f])>=1)[1]-1 #Years to positive yield balance
-        
-        
-        ExperimentResults[m,f,20]<- which((ResultStorage$Biomass[2:TimeToRun]-BaseConditions$Biomass[f])>=0)[1] #Years to positive biomass balance
-        
-        
-        ExperimentResults[m,f,22]<- Discount(pmax(0,ResultStorage$Yield[2:EvalTime]-BaseConditions$Yield[f]),Fleet$YieldDiscount,EvalTime-1)$NPV # Surplus over the selected time horizon available to pay loans   
-        
-        
-        FinalNPBPositive<- sign(Discount(ResultStorage$Yield-BaseConditions$Yield[f],Fleet$YieldDiscount,length(ResultStorage$Yield))$NPV)>0 
-        
-        ExperimentResults[m,f,21]<- which((Discount(ResultStorage$Yield[2:TimeToRun]-BaseConditions$Yield[f],Fleet$YieldDiscount,length(ResultStorage$Yield[2:TimeToRun]))$CumValues)>=0)[1] #Years until positive net yield balance          
-        
-        if (FinalNPBPositive == F)
-        {
-          ExperimentResults[m,f,21]<- NA #If the final NPB is negative, set years to positive NPB as NA
-        }
-        
-        YieldBalance<- ResultStorage$Yield-BaseConditions$Yield[f]
-        
-        YieldBalance<- YieldBalance[2:EvalTime]
-        
-        NegativeYears<- length(YieldBalance[YieldBalance<0])
-        
-        RequestedLoan<- Discount(pmin(0,YieldBalance),Fleet$YieldDiscount,EvalTime-1)$NPV #Discounted Requested Loan Amount. 
-        
-        ExperimentResults[m,f,23]<- -RequestedLoan    #Store Discounted Requested Loan Amount
-        
-        FlatExperimentResults[cc,1]<- SpeciesList[s]
-        
-        FlatExperimentResults[cc,2:dim(FlatExperimentResults)[2]]<- c(lh$Range,lh$BH.Steepness,m,f,FScenarios[f]/Fmsy$par,OptNTZSize$par,as.numeric(ExperimentResults[m,f,]))
-        # 
-        #         FlatExperimentResults[cc,2:dim(FlatExperimentResults)[2]]<- data.frame(lh$Range,lh$BH.Steepness,m,f,FScenarios[f]/Fmsy$par,OptNTZSize$par,as.numeric(ExperimentResults[m,f,]))
-        #         
-        #         colnames(FlatExperimentResults)<- LongDataNames
-        #         
       } #Close loop over MPA proposals
       
     } #Close loop over fishing scenarios
     
     
-    #######Perform Loan Analysis ######
-    
-    LoanRates<- seq(.01,2,length.out=20)
-    
-    LoanTime<- 20
-    
-    PlotLayout<- matrix(1:length(FScenarios),nrow=length(FScenarios),ncol=1)
-    
-    Colors=terrain.colors(2*(dim(MPAs)[2]))[1:(dim(MPAs)[2])]
-    
-    for (d in 1:dim(FlatExperimentResults)[1])
-    {
-      
-      MaxInterestRate<- NA
-      
-      #       if (as.numeric(FlatExperimentResults$RequestedLoan[d])>0 & as.numeric(FlatExperimentResults$RequestedLoan[d])<=as.numeric(FlatExperimentResults$TenYearNPSurplus[d]) )
-      #       {
-      #         
-      #         MaxInterestRate<- optim(-4,FindMaxInterestRate,LoanTime=LoanTime,LoanAmount=as.numeric(FlatExperimentResults$RequestedLoan[d]),Surplus=as.numeric(FlatExperimentResults$TenYearNPSurplus[d]),lower=-10,upper=10,method='Brent')$par
-      #         
-      #       }
-      FlatExperimentResults$MaxInterestRate[d]<- 100*exp(MaxInterestRate)
-    }
-    
-    
-    ##### Store Things ####
-    
-    # FlatExperimentResults$MaxInterestRate[FlatExperimentResults$MaxInterestRate< exp(-4)]<- 0
-    
-    # FlatExperimentResults$MaxInterestRate[FlatExperimentResults$MaxInterestRate> 2]<- Inf
-    
-    FlatExperimentResults$MaxInterestRate<- round(FlatExperimentResults$MaxInterestRate,2)
-    
-    FlatExperimentResults$MPAScenario<- as.factor(FlatExperimentResults$MPAScenario)
-    
-    levels(FlatExperimentResults$MPAScenario)<- MPANames
-    
-    write.csv(file=paste(ResultFolder,'Total Results.csv'),TotalStorage)
-    
-    write.csv(file=paste(ResultFolder,'Experiment Results.csv'),FlatExperimentResults)
-    
-    TotalStorage$Species<- SpeciesList[s]
-    FlatExperimentResults$Species<- SpeciesList[s]
-    
-    AllSpeciesStorage<- rbind(AllSpeciesStorage,TotalStorage)
-    AllSpeciesExperimentResults<- rbind(AllSpeciesExperimentResults, FlatExperimentResults)
-    
-    ####### PLOT LOTS OF STUFF ########
-    
-    write.csv(OptRelativeNumbers,file=paste(ResultFolder,'Numbers relative to optimum numbers.csv'))
-    
-    ResultNames<- dimnames(ExperimentResults)[3]
-    ResultNames<- ResultNames[[1]]
-    
-    FNames<- dimnames(ExperimentResults)[2]
-    #     FNames<- FNames[[1]]
-    
   } #Close species list loop
+  
+  browser()
+  TotalStorage$YieldBalance<- TotalStorage$Yield-TotalStorage$SQYield
+  
+  TotalStorage$ScenId<- with(TotalStorage,paste(Species,m,f,sep='-'))
+  
+  TotalStorage<- ddply(TotalStorage,c('ScenId'),mutate,
+                       PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
+                       NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
+  quartz()
+ggplot(TotalStorage,aes(Year,NPB,color=m))+geom_line()+facet_wrap(~Species)
+  
+  write.csv(file=paste(ResultFolder,'Total Results.csv'),TotalStorage)
   
   save.image(file=paste(ResultFolder,'Completed Workspace.rdata'))
   
