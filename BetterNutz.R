@@ -27,7 +27,10 @@ ReservePosition<- 'Center'
 OptTime<- 65 #Time Horizon to optimize over
 Alpha<- 0.5
 
+
 TimeToRun<- OptTime+1
+
+DiscRates<- 0.1
 
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
 BatchFolder<- 'Results/3.0/'
@@ -72,6 +75,9 @@ c<- 0
 
 if (RunAnalysis==1)
 {
+  
+  
+  RunMatrix<- PrepareRuns(SpeciesList,'f25',MPANames,DiscRates)
   
   for (s in 1:length(SpeciesList))
   {
@@ -177,7 +183,7 @@ if (RunAnalysis==1)
     
     colnames(MPAs)<- MPANames
     
-#     TimeToRun<-dim(MPAs)[1]
+    #     TimeToRun<-dim(MPAs)[1]
     
     EvalTime<- OptTime #Time span to evaluate results on
     RunTime<- 'Custom'
@@ -194,7 +200,7 @@ if (RunAnalysis==1)
     
     OptimalConditions<- as.data.frame(matrix(NA,nrow= length(FScenarios),ncol=3))
     colnames(OptimalConditions)<- c('Yield','Biomass','Numbers')
-        
+    
     cc<- 0
     
     for (f in 1:length(FScenarios)) 
@@ -373,7 +379,7 @@ if (RunAnalysis==1)
           
           FVec<- MoveFleet(FTemp,CurrentMPA,FleetSpill,0)
           
-          if (MPANames[m]=='CatchShareEqNTZ')
+          if (MPANames[m]=='CatchShareEqNTZ'& Year>1)
           {
             #             FVec<- MoveFleet(FTemp,CurrentMPA,0,0)            
             FVec<- MoveFleet(Fmsy$par,CurrentMPA,0,0)            
@@ -389,89 +395,40 @@ if (RunAnalysis==1)
           TotalStorage[c,]<-data.frame(SpeciesList[s],MPANames[m],f,FScenarios[f],CurrentMPA,y,PassPop$Performance$MeanYield,PassPop$Performance$MeanBiomass,PassPop$Performance$MeanNumbers, BaseConditions$Yield[f],BaseConditions$Numbers[f], BaseConditions$Biomass[f], 
                                        OptimalConditions$Yield[f], OptimalConditions$Numbers[f], OptimalConditions$Biomass[f], OptNTZSize$par,stringsAsFactors=F)
           
+          TotalStorage$YieldBalance<- TotalStorage$Yield-TotalStorage$SQYield
+          
+          TotalStorage$ScenId<- with(TotalStorage,paste(Species,m,f,sep='-'))
+          
+          TotalStorage<- ddply(TotalStorage,c('ScenId'),mutate,
+                               PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
+                               NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>% subset(m!='StatusQuo')
+          #   quartz()
+          
         } #Close TimeToRun loop   
         
       } #Close loop over MPA proposals
       
     } #Close loop over fishing scenarios
     
-    
   } #Close species list loop
   
-  browser()
   TotalStorage$YieldBalance<- TotalStorage$Yield-TotalStorage$SQYield
   
   TotalStorage$ScenId<- with(TotalStorage,paste(Species,m,f,sep='-'))
   
   TotalStorage<- ddply(TotalStorage,c('ScenId'),mutate,
                        PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
-                       NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
-  quartz()
-ggplot(TotalStorage,aes(Year,NPB,color=m))+geom_line()+facet_wrap(~Species)
+                       NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>% subset(m!='StatusQuo')
+  #   quartz()
+  # ggplot(TotalStorage,aes(Year,NPB,color=m))+geom_line()+facet_wrap(~Species)
+  
+  TotalStorage$m<- as.factor(TotalStorage$m)
+  
+  levels(TotalStorage$m)<- c('Catch Share','Long Term Optimal','Grow','Short Term Optimal','Shrink')
   
   write.csv(file=paste(ResultFolder,'Total Results.csv'),TotalStorage)
   
   save.image(file=paste(ResultFolder,'Completed Workspace.rdata'))
-  
-  AllSpeciesExperimentResults$MPAScenario<- as.factor(AllSpeciesExperimentResults$MPAScenario)
-  
-  levels(AllSpeciesExperimentResults$MPAScenario)<- MPANames
-  
-  AllSpeciesExperimentResults<- AllSpeciesExperimentResults[AllSpeciesExperimentResults$MPAScenario!='StatusQuo',]
-  
-  TotalStorage$Year<- as.numeric(TotalStorage$Year)
-  
-  TotalStorage$NPB<- as.numeric(TotalStorage$NPB)
-  
-  TotalStorage$m<- as.factor(TotalStorage$m)
-  
-  TotalStorage$f<- as.factor(TotalStorage$f)
-  
-  levels(TotalStorage$m)<- MPANames
-  
-  #   levels(TotalStorage$f)<- c('F50','F25')
-  
-  levels(TotalStorage$f)<- c('F25')
-  
-  AllSpeciesStorage$Year<- as.numeric(AllSpeciesStorage$Year)
-  
-  AllSpeciesStorage$NPB<- as.numeric(AllSpeciesStorage$NPB)
-  
-  AllSpeciesStorage$m<- as.factor(AllSpeciesStorage$m)
-  
-  AllSpeciesStorage$f<- as.factor(AllSpeciesStorage$f)
-  
-  levels(AllSpeciesStorage$m)<- MPANames
-  
-  levels(AllSpeciesStorage$f)<- c('F25')
-  #   levels(AllSpeciesStorage$f)<- c('F50','F25')
-  
-  SubScenarios<- c('EqNTZ','GNTZ','SNTZ','OptNTZ','CatchShareEqNTZ')
-  
-  Where<-   AllSpeciesStorage$m %in% SubScenarios
-  
-  PlotStorage<- AllSpeciesStorage[Where,]
-  
-  PlotStorage$m<- as.character(PlotStorage$m)
-  
-  PlotStorage$m<- as.factor(PlotStorage$m)
-  
-  PlotStorage$FracNTZ<- as.numeric(PlotStorage$FracNTZ)
-  
-  PlotStorage$Yield<- as.numeric(PlotStorage$Yield)
-  
-  PlotStorage$SQYield<- as.numeric(PlotStorage$SQYield)
-  
-  PlotStorage$PositiveYields<- 0
-  
-  FNames<- levels(TotalStorage$f)
-  
-  #   PlotStorage$YieldBalance<- as.numeric(PlotStorage$YieldBalance)
-  
-  # levels(PlotStorage$m)<- c('Equilibrium','Grow','Optimize','Shrink')
-  PlotStorage$OldM<- PlotStorage$m
-  
-  levels(PlotStorage$m)<- c('Catch Share','Long Term Optimal','Grow','Short Term Optimal','Shrink')
   
   
 } #Run Analysis If
