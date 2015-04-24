@@ -3,7 +3,7 @@
 
 InputFolder<- 'Inputs/' #Folder where the population parameter files are
 SeedFolder<- 'Working/'#Folder where results will be stored (working version)
-
+StoreRun<- 0
 if (StoreRun==1)
 {
   SeedFolder<- paste(Species,'Created-',Sys.time(),'/',sep="") #Folder to store outputs with a timestamp
@@ -41,15 +41,15 @@ source(paste(InputFolder,'GenericLifeHistory.R',sep='')) #load in population par
 source('GASP.R') #source GASP functions
 lh$Bmsy<- -999
 lh$SSB0<- NA
-LengthAtAge<- Length(1:lh$MaxAge) #Calculate length at age vector
-WeightAtAge<- Weight(LengthAtAge,lh$WeightForm) #Calculate weight at age vector
-FecundityAtAge<- Fecundity(LengthAtAge,'Length') #Calculate Fecundity at age vector
-if (lh$NoFecundRelate==1)
-{
-  FecundityAtAge<- WeightAtAge
-}
+# LengthAtAge<- Length(1:lh$MaxAge) #Calculate length at age vector
+# WeightAtAge<- Weight(LengthAtAge,lh$WeightForm) #Calculate weight at age vector
+# FecundityAtAge<- Fecundity(LengthAtAge,'Length') #Calculate Fecundity at age vector
+# if (lh$NoFecundRelate==1)
+# {
+#   FecundityAtAge<- WeightAtAge
+# }
 # MaturityAtAge<- Maturity(LengthAtAge,'Length',lh$LengthMa50, lh$LengthMa95) # Calculate maturity at age vector
-MaturityAtAge<- Maturity(1:lh$MaxAge, MaturityMode) # Calculate maturity at age vector
+# MaturityAtAge<- Maturity(1:lh$MaxAge, MaturityMode) # Calculate maturity at age vector
 
 
 # ####### Set Fishing Fleet/Management Parameters ########
