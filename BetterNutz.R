@@ -76,9 +76,7 @@ c<- 0
 if (RunAnalysis==1)
 {
   
-  
-  RunMatrix<- PrepareRuns(SpeciesList,'f25',MPANames,DiscRates)
-  
+    
   for (s in 1:length(SpeciesList))
   {
     Species<- SpeciesList[s] #species file to load
