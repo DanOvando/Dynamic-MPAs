@@ -68,7 +68,7 @@ colnames(SystemBmsyStorage)<- c('Species','Bmsy')
 
 SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
 
-SpeciesList<- SpeciesList[1]
+SpeciesList<- SpeciesList[3]
 
 NumFs<- 1
 
@@ -80,6 +80,7 @@ DefaultLifeHistory<- lh
 RunMatrix<- PrepareRuns(SpeciesList,0.25,MPANames,DiscRates)
 
 BasePatches<- Patches
+
 
 ReserveResults=(lapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
          DefaultLifeHistory=DefaultLifeHistory)) %>% ldply()
@@ -93,7 +94,7 @@ ReserveResults<- ddply(ReserveResults,c('ScenId'),mutate,
                      NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
 
 quartz()
-ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()
+ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species)
 
 
 #   quartz()

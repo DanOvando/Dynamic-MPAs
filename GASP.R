@@ -5,7 +5,7 @@
 #4.29/13
 #Summary: This suite of functions run a general age structured fishery model. Will prepare a short summary shortly to use the set. 
 
-GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,GroupFigName,Species,lh,Patches)
+GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,GroupFigName,Species,lh,Patches,FigureFolder)
 {
   
   RelativePatchSizes <- 1
@@ -254,14 +254,14 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   
   if (MakePlots==1)
   {   
-    FormatFigure(paste(GroupFigName,'Total Numbers (N) Over Time.pdf'))
+    FormatFigure(paste(GroupFigName,'Total Numbers (N) Over Time.pdf'),FigureFolder)
     matplot(rowSums(PopTrajectory),type='l',lwd=4,xlab='Time',ylab='Total Numbers',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
     #     legend('topright',legend=paste('Patch',1:NumPatches),col=terrain.colors(2*NumPatches)[1:NumPatches],lty=1:NumPatches,lwd=4,bty='n')
     dev.off()  
     
     if (lh$Bmsy[1]!=-999)
     {
-      FormatFigure(paste(GroupFigName,'BvBmsy Over Time.pdf'))
+      FormatFigure(paste(GroupFigName,'BvBmsy Over Time.pdf'),FigureFolder=FigureFolder)
       matplot(rowSums(WeightTrajectory)/sum(lh$Bmsy),type='l',lwd=4,xlab='Time',ylab='B/Bmsy',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
       #       legend('topright',legend=paste('Patch',1:NumPatches),col=terrain.colors(2*NumPatches)[1:NumPatches],lty=1:NumPatches,lwd=4,bty='n')
       dev.off()
@@ -270,7 +270,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     if (LookAtLengths==1)
     {
-      FormatFigure(paste(GroupFigName,'Final Length Frequency Histogram.pdf'))
+      FormatFigure(paste(GroupFigName,'Final Length Frequency Histogram.pdf'),FigureFolder)
       
       FlatLengthFreq<- as.data.frame(FinalLengthFrequency)
       
@@ -291,7 +291,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
       
     }
     
-    FormatFigure(paste(GroupFigName,'Fishing Yields.pdf'))
+    FormatFigure(paste(GroupFigName,'Fishing Yields.pdf'),FigureFolder)
     
     FlatFishingYields<- as.data.frame(StoreFishedWeight)
     
@@ -316,7 +316,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     print(xyplot(Yields ~Year  | MPA,data=FlatFishingYields,type='l',lwd=4))
     dev.off()
     
-    FormatFigure(paste(GroupFigName,'Biomass Over Time.pdf'))
+    FormatFigure(paste(GroupFigName,'Biomass Over Time.pdf'),FigureFolder)
     
     FlatBiomass<- as.data.frame(WeightTrajectory)
     
@@ -342,7 +342,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     dev.off()
     
-    FormatFigure(paste(GroupFigName,' Patch Biomass.pdf'))
+    FormatFigure(paste(GroupFigName,' Patch Biomass.pdf'),FigureFolder)
     
     FlatFinalBiomass<- as.data.frame(WeightTrajectory[dim(WeightTrajectory)[1],])
     
@@ -389,7 +389,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   #   return(list(NumatAge=PopArray,FinalNumAtAge=FinalNumAtAge,FishingYields=StoreFishedWeight,TotalPop=PopTrajectory,Performance=Performance,FinalLengthFrequency= FinalLengthFrequency)) 
 } #Close population growth function
 
-FormatFigure<- function(name)
+FormatFigure<- function(name,FigureFolder)
 {
   pdf(file=paste(FigureFolder,name,sep=''),family=Font,pointsize=FontSize)
 }
@@ -1108,7 +1108,7 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
     
     NewF<- MoveFleet(FTemp,MPASize,FleetSpill,0)
     
-    NewPop<- GrowPopulation(PassPop,NewF,1,0,'eh',Species,lh,Patches)
+    NewPop<- GrowPopulation(PassPop,NewF,0,0,'eh',Species,lh,Patches)
     
     Yields[t]<- NewPop$Performance$Yields
     
@@ -1163,7 +1163,7 @@ FindMaxInterestRate<- function(InterestRate,LoanTime,LoanAmount,Surplus)
   return((LoanAdjustedBalance^2))
 } 
 
-movArray<-function(SpaceC,sdy,Form)
+movArray<-function(SpaceC,sdy,Form,FigureFolder)
 {
   
   if (Form=='Wrap')
@@ -1214,7 +1214,7 @@ movArray<-function(SpaceC,sdy,Form)
     parea<-p.all[,(P+1):(2*P)]
     SpaceIn<-p1+p2+parea
     
-    FormatFigure('Movement Probabilities.pdf')
+    FormatFigure('Movement Probabilities.pdf',FigureFolder)
     contour(SpaceIn)
     dev.off()
     
@@ -1251,7 +1251,7 @@ movArray<-function(SpaceC,sdy,Form)
     
     dim(SpaceIn)<- c(NumPatches,NumPatches)
     
-    FormatFigure('Movement Probabilities.pdf')
+    FormatFigure('Movement Probabilities.pdf',FigureFolder)
     contour(SpaceIn)
     dev.off()
   }

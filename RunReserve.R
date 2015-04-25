@@ -1,7 +1,11 @@
 RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
 {
   
+  
+  
+
   lh<- DefaultLifeHistory
+  
   
   Run<- RunMatrix[r,]
   
@@ -9,7 +13,27 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   {
     eval(parse(text=paste(colnames(Run)[d],'<- I(Run[d])',sep='')))
   }
+
+  StoreRun<- paste(BatchFolder,Species,sep='') #1 if you want to create a seeded folder to store results, 0 if you want it in the generic working folder
+
+  if (StoreRun==1)
+  {
+    SeedFolder<- paste(Species,'Created-',Sys.time(),'/',sep="") #Folder to store outputs with a timestamp
+  }
+  if (is.character(StoreRun))
+  {
+    SeedFolder<- paste(StoreRun,'/',sep='')
+  }
+  dir.create(SeedFolder)
   
+  FigureFolder<- paste(SeedFolder,'Figures/',sep='')
+  ResultFolder<- paste(SeedFolder,'Results/',sep='')
+  
+  
+  dir.create(FigureFolder)
+  dir.create(ResultFolder)  
+  
+  save.image(file=paste(SeedFolder,'ModelSettings.Rdata',sep=''))
   
   TotalStorage<- as.data.frame(matrix(NA,nrow= TimeToRun,ncol=16))
   
@@ -38,7 +62,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   lh$MoveType<- '2D'
   
-  lh$MovementArray<- movArray(NumPatches,((lh$Range)*NumPatches)/5,'Wrap')
+  lh$MovementArray<- movArray(NumPatches,((lh$Range)*NumPatches)/5,'Wrap',FigureFolder)
   
   lh$Bmsy<- -999
   
@@ -62,7 +86,6 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
     lh$R0<- 100*Patches$HabQuality
   }
   
-  
   pdf(file=paste(FigureFolder,'Life History.pdf',sep=''),width=8,height=6)
   par(mfrow=c(2,2),mar=c(4,4,1,1),oma=c(4,6,2,6))
   plot(lh$LengthAtAge/10,ylab='Length(cm)',type='l',lwd=2,xlab=NA,xaxt='n')
@@ -78,7 +101,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   ####### SET UP INITIAL POPULATION ########
   #     Rprof(tmp <- tempfile(),line.profiling=T)
   
-  EQPopulation<- GrowPopulation(1000,rep(0,NumPatches),'EQ',0,'EQ Run',Species=Species,lh=lh,Patches=Patches) #Run the population out to unfished equilibrium
+  EQPopulation<- GrowPopulation(1000,rep(0,NumPatches),'EQ',0,'EQ Run',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder) #Run the population out to unfished equilibrium
   
   lh<- EQPopulation$lh
   #     Rprof() 
@@ -95,7 +118,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   Fmsy$par<- exp(Fmsy$minimum) 
   
-  BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',0,'Bmsy Run',Species=Species,lh=lh,Patches=Patches) #Bmsy Population
+  BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',0,'Bmsy Run',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder) #Bmsy Population
   
   lh$Nmsy<- (colSums(BmsyPopulation$FinalNumAtAge)) #Nmsy
   
@@ -109,7 +132,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   FatTarget$par<- exp(FatTarget$minimum)
   
-  BatTargetPopulation<- GrowPopulation(UnfishedPopulation, rep(FatTarget$par,NumPatches),'EQ',0,'BatTarget Run',Species=Species,lh=lh,Patches=Patches)
+  BatTargetPopulation<- GrowPopulation(UnfishedPopulation, rep(FatTarget$par,NumPatches),'EQ',0,'BatTarget Run',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder)
   
   ####### RUN MPA SIMULATIONS ########
   
@@ -135,7 +158,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   OptimalConditions<- as.data.frame(matrix(NA,nrow= length(FScenarios),ncol=3))
   colnames(OptimalConditions)<- c('Yield','Biomass','Numbers')
   
-  BasePop<- GrowPopulation(EQPopulation$FinalNumAtAge,FatTarget$par,'EQ',1,paste('FvFmsy is',round(FatTarget$par/Fmsy$par,2)),Species=Species,lh=lh,Patches=Patches)
+  BasePop<- GrowPopulation(EQPopulation$FinalNumAtAge,FatTarget$par,'EQ',0,paste('FvFmsy is',round(FatTarget$par/Fmsy$par,2)),Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder)
   
   StartPop<- BasePop$FinalNumAtAge
   
@@ -214,7 +237,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   FTemp<- MoveFleet(FatTarget$par, OptNTZSize$par,FleetSpill,0)
   
-  OptPop<- GrowPopulation(StartPop,FTemp,'EQ',0,paste('Opt MPA is',round(OptNTZSize$par,2),'when FvFmsy is',round(FatTarget$par/Fmsy$par,2)),Species=Species,lh=lh,Patches=Patches)
+  OptPop<- GrowPopulation(StartPop,FTemp,'EQ',0,paste('Opt MPA is',round(OptNTZSize$par,2),'when FvFmsy is',round(FatTarget$par/Fmsy$par,2)),Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder)
   
   OptimalConditions$Yield<-(OptPop$Performance$Yields[length(OptPop$Performance$Yields)])
   
@@ -273,7 +296,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
       
     }
     
-    PassPop<- GrowPopulation(TempPop,FVec,1,0,'TEST',Species=Species,lh=lh,Patches=Patches) #grow the new population
+    PassPop<- GrowPopulation(TempPop,FVec,1,0,'TEST',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder) #grow the new population
     
     TempPop<- PassPop$FinalNumAtAge
     

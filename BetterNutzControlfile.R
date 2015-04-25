@@ -3,23 +3,7 @@
 
 InputFolder<- 'Inputs/' #Folder where the population parameter files are
 SeedFolder<- 'Working/'#Folder where results will be stored (working version)
-StoreRun<- 0
-if (StoreRun==1)
-{
-  SeedFolder<- paste(Species,'Created-',Sys.time(),'/',sep="") #Folder to store outputs with a timestamp
-}
-if (is.character(StoreRun))
-{
-  SeedFolder<- paste(StoreRun,'/',sep='')
-}
-dir.create(SeedFolder)
 
-FigureFolder<- paste(SeedFolder,'Figures/',sep='')
-ResultFolder<- paste(SeedFolder,'Results/',sep='')
-
-
-dir.create(FigureFolder)
-dir.create(ResultFolder)
 
 FontSize<- 14 #Font size for figures
 Font<- "Helvetica" #Font type for figures
@@ -80,4 +64,4 @@ if (max(Patches$SizeLocations)>NumPatches | max(Patches$MPALocations)>NumPatches
   warning('PatchSizes, PatchLocations, or MPALocations are not the correct length; fix in controlfile')
 }
 
-save.image(file=paste(SeedFolder,'ModelSettings.Rdata',sep=''))
+# save.image(file=paste(SeedFolder,'ModelSettings.Rdata',sep=''))
