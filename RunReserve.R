@@ -186,9 +186,9 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   print(ggplot(data=mcheck,aes(MPASize,NPB))+geom_point()+geom_vline(xintercept=OptNTZSize$par))
   dev.off()
   
-  Int=seq(0,1,length.out=10)   
+  Int=seq(0,1,length.out=30)   
   
-  Flip=seq(.001,1,length.out=10)   
+  Flip=seq(.001,1,length.out=30)   
   
   ObjMat<- matrix(NA,nrow=length(Int)*length(Flip),ncol=3)
   

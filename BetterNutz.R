@@ -68,7 +68,7 @@ colnames(SystemBmsyStorage)<- c('Species','Bmsy')
 
 SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
 
-SpeciesList<- SpeciesList[3]
+# SpeciesList<- SpeciesList[3]
 
 NumFs<- 1
 
@@ -82,7 +82,7 @@ RunMatrix<- PrepareRuns(SpeciesList,0.25,MPANames,DiscRates)
 BasePatches<- Patches
 
 
-ReserveResults=(mclapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
+ReserveResults=(lapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
          DefaultLifeHistory=DefaultLifeHistory)) %>% ldply()
 
 ReserveResults$YieldBalance<- ReserveResults$Yield-ReserveResults$SQYield
