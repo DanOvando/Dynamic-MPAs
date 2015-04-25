@@ -176,7 +176,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   OptNTZSize<-   optim(mguess,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FatTarget$par,StartPop=StartPop,FleetSpill=FleetSpill,BasePatches=BasePatches,Species=Species,lh=lh) #You need a better optimization here, gets really stuck with any kind of stochasticity
   
-  OptNTZSize<-   optim(OptNTZSize$par,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FatTarget$par,StartPop=StartPop,FleetSpill=FleetSpill,BasePatches=BasePatches,Species=Species,lh=lh) #You need a better optimization here, gets really stuck with any kind of stochasticity
+#   OptNTZSize<-   optim(OptNTZSize$par,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FatTarget$par,StartPop=StartPop,FleetSpill=FleetSpill,BasePatches=BasePatches,Species=Species,lh=lh) #You need a better optimization here, gets really stuck with any kind of stochasticity
   
   mcheck<- data.frame(wtf,-(arg))
   
