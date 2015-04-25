@@ -1108,7 +1108,7 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
     
     NewF<- MoveFleet(FTemp,MPASize,FleetSpill,0)
     
-    NewPop<- GrowPopulation(PassPop,NewF,0,0,'eh',Species,lh,Patches)
+    NewPop<- GrowPopulation(PassPop,NewF,1,0,'eh',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder)
     
     Yields[t]<- NewPop$Performance$Yields
     

@@ -82,7 +82,7 @@ RunMatrix<- PrepareRuns(SpeciesList,0.25,MPANames,DiscRates)
 BasePatches<- Patches
 
 
-ReserveResults=(lapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
+ReserveResults=(mclapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
          DefaultLifeHistory=DefaultLifeHistory)) %>% ldply()
 
 ReserveResults$YieldBalance<- ReserveResults$Yield-ReserveResults$SQYield
