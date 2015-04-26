@@ -313,10 +313,10 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     FlatFishingYields<- ddply(FlatFishingYields,c('Year','MPA'),summarize,Yields=sum(Yield))
     
-    print(xyplot(Yields ~Year  | MPA,data=FlatFishingYields,type='l',lwd=4))
-    dev.off()
+#     print(xyplot(Yields ~Year  | MPA,data=FlatFishingYields,type='l',lwd=4))
+#     dev.off()
     
-    FormatFigure(paste(GroupFigName,'Biomass Over Time.pdf'),FigureFolder)
+#     FormatFigure(paste(GroupFigName,'Biomass Over Time.pdf'),FigureFolder)
     
     FlatBiomass<- as.data.frame(WeightTrajectory)
     
@@ -338,9 +338,9 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     FlatBiomass<- ddply(FlatBiomass,c('Year','MPA'),summarize,Biomass=sum(Biomass))
     
-    print(xyplot(Biomass ~ Year | MPA,data=FlatBiomass,type='l',lwd=4))
-    
-    dev.off()
+#     print(xyplot(Biomass ~ Year | MPA,data=FlatBiomass,type='l',lwd=4))
+#     
+#     dev.off()
     
     FormatFigure(paste(GroupFigName,' Patch Biomass.pdf'),FigureFolder)
     
