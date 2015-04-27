@@ -155,9 +155,9 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
         WeightTrajectory<- t(as.matrix(colSums(WeightArray)))
       }
       warning(paste('Population never reached EQ, F is ',FishingPressure))
-      quartz()
-      matplot(WeightTrajectory,type='l',lwd=4,xlab='Time',ylab='B/Bmsy',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
-      
+#       quartz()
+#       matplot(WeightTrajectory,type='l',lwd=4,xlab='Time',ylab='B/Bmsy',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
+#       
     }
     if (Time=='EQ' & PopChange==0 & t>5) #If you're running to EQ, stop once population isn't changing
     {
