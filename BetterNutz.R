@@ -233,9 +233,9 @@ if (RunAnalysis==1)
       
       Patches<- BasePatches
       
-      Int=seq(0,1,length.out=20)   
+      Int=seq(0,1,length.out=4)   
       
-      Flip=seq(.001,1,length.out=20)   
+      Flip=seq(.001,1,length.out=4)   
       
       ObjMat<- matrix(NA,nrow=length(Int)*length(Flip),ncol=3)
       
@@ -377,7 +377,7 @@ if (RunAnalysis==1)
           
           FVec<- MoveFleet(FTemp,CurrentMPA,FleetSpill,0)
           
-          if (MPANames[m]=='CatchShareEqNTZ'& Year>1)
+          if (MPANames[m]=='CatchShareEqNTZ'& y>1)
           {
             #             FVec<- MoveFleet(FTemp,CurrentMPA,0,0)            
             FVec<- MoveFleet(Fmsy$par,CurrentMPA,0,0)            
@@ -417,6 +417,8 @@ if (RunAnalysis==1)
   TotalStorage<- ddply(TotalStorage,c('ScenId'),mutate,
                        PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
                        NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>% subset(m!='StatusQuo')
+ browser()
+  
   #   quartz()
   # ggplot(TotalStorage,aes(Year,NPB,color=m))+geom_line()+facet_wrap(~Species)
   
