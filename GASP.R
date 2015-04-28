@@ -406,7 +406,7 @@ Discount<- function(DataVec,DR,Time)
   return(list(DiscValues= DiscValues,NPV=NPV,CumValues=CumNPV))
 }
 
-Length <- function(ages)
+Length <- function(ages,lh)
 {
   Length<-lh$Linf*(1-exp(-1*lh$k*(ages-lh$t0)))
   return(Length)
@@ -430,7 +430,7 @@ Length <- function(ages)
 #   return(LengthAtAgeDist)
 # }
 
-LengthWiError<- function(Lengths,NumDraws) #Produce a distribution 
+LengthWiError<- function(Lengths,NumDraws,lh) #Produce a distribution 
 {
   
   HasNumber<- as.numeric(NumDraws>0)
@@ -457,7 +457,7 @@ LengthFrequency<- function(NumAtAge,MeanLengths)
   {
     for (f in 1:dim(NumAtAge)[1])
     {
-      NewLengths<- LengthWiError(MeanLengths[f],ceiling(NumAtAge[f,p]))
+      NewLengths<- LengthWiError(MeanLengths[f],ceiling(NumAtAge[f,p]),lh)
       #       VecLength<- 1:length(FreqMat[,p])
       #       Where<- (is.na(FreqMat[,p]))
       #       Where<- VecLength[Where]
@@ -473,9 +473,9 @@ LengthFrequency<- function(NumAtAge,MeanLengths)
   return(FreqMat)	
 }
 
-Weight<- function(Lengths,WeightForm)
+Weight<- function(Lengths,WeightForm,lh)
 {
-  LengthDist<- LengthWiError(Lengths,100)
+  LengthDist<- LengthWiError(Lengths,100,lh)
   
   if (WeightForm=='Exponential')
   {
@@ -501,12 +501,12 @@ Weight<- function(Lengths,WeightForm)
   return(weight)
 }  
 
-Fecundity <- function (Data,FecForm)
+Fecundity <- function (Data,FecForm,lh)
 { 
   
   if (FecForm=='Length')
   {
-    LengthDist<- LengthWiError(Data,100)
+    LengthDist<- LengthWiError(Data,100,lh)
     fecund<- rowMeans(lh$fa*LengthDist^lh$fb)
   }
   if (FecForm=='Weight')
@@ -516,20 +516,20 @@ Fecundity <- function (Data,FecForm)
   return(fecund)
 }
 
-Maturity <- function(Data,Mode)
+Maturity <- function(Data,Mode,lh)
 {
   
   if (Mode=='Length')
   {
     
     
-    Data<- Length(Data)
+    Data<- Length(Data,lh)
     
     s50<- lh$LengthMa50
     
     s95<- lh$LengthMa95
     
-    LengthDist<- LengthWiError(Data,100)
+    LengthDist<- LengthWiError(Data,100,lh)
     # mature<-rowMeans(round(1/(1+exp(lh$ma50*LengthDist+lh$ma95)),2))
     
     mature<- rowMeans(round(1/(1+exp(-log(19)*((LengthDist-s50)/(s95-s50)))),2))	
@@ -791,7 +791,7 @@ FishingSelectivity<- function(Lengths,s50,s95,NumDraws)
   # s95=45
   # NumDraws=1000
   
-    LengthDist<- LengthWiError(Lengths,100)
+    LengthDist<- LengthWiError(Lengths,100,lh)
     
     GroupSelectivity<- 1/(1+exp(-log(19)*((LengthDist-s50)/(s95-s50))))	
     

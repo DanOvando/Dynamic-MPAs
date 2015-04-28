@@ -50,7 +50,9 @@ dir.create(paste(BatchFolder,sep=''))
 
 # MPANames<- c('Status Quo','EqNTZ','Rotate','SNTZ','Basic','GNTZ','OptNTZ')
 
-MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
+# MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
+
+MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ')
 
 LifeHistories<- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors=F)
 
@@ -68,7 +70,7 @@ colnames(SystemBmsyStorage)<- c('Species','Bmsy')
 
 SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
 
-# SpeciesList<- SpeciesList[1:3]
+SpeciesList<- SpeciesList[1]
 
 NumFs<- 1
 
@@ -81,7 +83,7 @@ RunMatrix<- PrepareRuns(SpeciesList,0.25,MPANames,DiscRates)
 
 BasePatches<- Patches
 
-ReserveResults=(lapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
+ReserveResults=(mclapply(1:dim(RunMatrix)[1],RunReserve,mc.cores=1,RunMatrix=RunMatrix,BasePatches=BasePatches,
          DefaultLifeHistory=DefaultLifeHistory)) %>% ldply()
 
 ReserveResults$YieldBalance<- ReserveResults$Yield-ReserveResults$SQYield
@@ -93,7 +95,7 @@ ReserveResults<- ddply(ReserveResults,c('ScenId'),mutate,
                      NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
 
 quartz()
-ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species)
+ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species,scale='free')
 
 # browser()
 # 

@@ -1,9 +1,7 @@
 RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
 {
   
-
   lh<- DefaultLifeHistory
-  
   
   Run<- RunMatrix[r,]
   
@@ -11,9 +9,9 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   {
     eval(parse(text=paste(colnames(Run)[d],'<- I(Run[d])',sep='')))
   }
-
+  
   StoreRun<- paste(BatchFolder,Species,sep='') #1 if you want to create a seeded folder to store results, 0 if you want it in the generic working folder
-
+  
   if (StoreRun==1)
   {
     SeedFolder<- paste(Species,'Created-',Sys.time(),'/',sep="") #Folder to store outputs with a timestamp
@@ -54,6 +52,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
     
   }
   
+  
   lh$LengthMa95<-  1.01* lh$LengthMa50
   
   lh$AgeMa95<-  1.01* lh$AgeMa50
@@ -64,11 +63,11 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   lh$Bmsy<- -999
   
-  lh$LengthAtAge<- Length(1:lh$MaxAge) #Calculate length at age vector
+  lh$LengthAtAge<- Length(1:lh$MaxAge,lh) #Calculate length at age vector
   
-  lh$WeightAtAge<- Weight(lh$LengthAtAge,lh$WeightForm) #Calculate weight at age vector
+  lh$WeightAtAge<- Weight(lh$LengthAtAge,lh$WeightForm,lh) #Calculate weight at age vector
   
-  lh$FecundityAtAge<- Fecundity(lh$WeightAtAge,'Weight') #Calculate Fecundity at age vector
+  lh$FecundityAtAge<- Fecundity(lh$WeightAtAge,'Weight',lh) #Calculate Fecundity at age vector
   
   if (lh$NoFecundRelate==1)
   {
@@ -77,7 +76,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   lh$MaturityMode<- as.character(LifeHistory$MaturityMode)
   
-  lh$MaturityAtAge<- Maturity(1:lh$MaxAge, lh$MaturityMode) # Calculate maturity at age vector
+  lh$MaturityAtAge<- Maturity(1:lh$MaxAge, lh$MaturityMode,lh) # Calculate maturity at age vector
   
   if (Species=='Shark')
   {
@@ -174,7 +173,7 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   
   OptNTZSize<-   optim(mguess,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FatTarget$par,StartPop=StartPop,FleetSpill=FleetSpill,BasePatches=BasePatches,Species=Species,lh=lh) #You need a better optimization here, gets really stuck with any kind of stochasticity
   
-#   OptNTZSize<-   optim(OptNTZSize$par,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FatTarget$par,StartPop=StartPop,FleetSpill=FleetSpill,BasePatches=BasePatches,Species=Species,lh=lh) #You need a better optimization here, gets really stuck with any kind of stochasticity
+  #   OptNTZSize<-   optim(OptNTZSize$par,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FatTarget$par,StartPop=StartPop,FleetSpill=FleetSpill,BasePatches=BasePatches,Species=Species,lh=lh) #You need a better optimization here, gets really stuck with any kind of stochasticity
   
   mcheck<- data.frame(wtf,-(arg))
   
@@ -184,9 +183,9 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   print(ggplot(data=mcheck,aes(MPASize,NPB))+geom_point()+geom_vline(xintercept=OptNTZSize$par))
   dev.off()
   
-  Int=seq(0,1,length.out=5)   
+  Int=seq(0,1,length.out=30)   
   
-  Flip=seq(.001,1,length.out=5)   
+  Flip=seq(.001,1,length.out=30)   
   
   ObjMat<- matrix(NA,nrow=length(Int)*length(Flip),ncol=3)
   
