@@ -26,7 +26,7 @@ InitialPopulation<- 1000 #Seed for initial population
 CollapseThreshold<- 0.1
 LookAtLengths<- 0
 ReservePosition<- 'Center'
-OptTime<- 65 #Time Horizon to optimize over
+OptTime<- 50 #Time Horizon to optimize over
 Alpha<- 0.5
 
 
@@ -38,10 +38,12 @@ BasePatches<- Patches
 
 
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
-BatchFolder<- 'Results/3.0/'
+BatchFolder<- 'Results/3.1/'
 
-RunAnalysis<- 1
+RunAnalysis<- FALSE
 
+if (RunAnalysis==T)
+{
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
 
 LongDataNames<- c('Species','Movement','Steepness','MPAScenario','FishingScenario','FvFmsy','OptNTZ','NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
@@ -96,6 +98,14 @@ ReserveResults<- ddply(ReserveResults,c('ScenId'),mutate,
 
 quartz()
 ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species,scale='free')
+
+save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
+}
+if (RunAnalysis==F)
+{
+  load(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
+}
+
 
 # browser()
 # 
