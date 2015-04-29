@@ -54,7 +54,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   MaturityAtAge<- lh$MaturityAtAge
   
   WeightArray[1,,]<- PopArray[1,,] * WeightAtAge
-  
+
   StoreFishedWeight<- as.data.frame(matrix(0,nrow=TempTime+1,ncol=NumPatches)) #Blank for fishing yields
   
   t<- 1 #leave at 1
