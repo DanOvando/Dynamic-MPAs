@@ -16,7 +16,7 @@ library(broom)
 library(parallel)
 
 ####### Shrinking MPAs #########
-#Wilson, Doughtery, Ovando et al something something
+#Ovando, Dougherty, Wilson et al 
 
 ####### READ IN CONTROL FILE ########
 source('BetterNutzControlfile.R')
@@ -42,6 +42,10 @@ BatchFolder<- 'Results/3.1/'
 
 RunAnalysis<- FALSE
 
+
+if (RunAnalysis==TRUE)
+{
+
 if (RunAnalysis==T)
 {
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
@@ -50,15 +54,9 @@ LongDataNames<- c('Species','Movement','Steepness','MPAScenario','FishingScenari
 
 dir.create(paste(BatchFolder,sep=''))
 
-# MPANames<- c('Status Quo','EqNTZ','Rotate','SNTZ','Basic','GNTZ','OptNTZ')
-
-# MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
-
 MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
 
 LifeHistories<- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors=F)
-
-# LifeHistories<- LifeHistories[7,]
 
 LifeColumns<- colnames(LifeHistories)
 
@@ -72,7 +70,7 @@ colnames(SystemBmsyStorage)<- c('Species','Bmsy')
 
 SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
 
-SpeciesList<- SpeciesList[1]
+# SpeciesList<- SpeciesList[1]
 
 NumFs<- 1
 
@@ -85,7 +83,7 @@ RunMatrix<- PrepareRuns(SpeciesList,0.25,MPANames,DiscRates)
 
 BasePatches<- Patches
 
-ReserveResults=(mclapply(1:dim(RunMatrix)[1],RunReserve,mc.cores=1,RunMatrix=RunMatrix,BasePatches=BasePatches,
+ReserveResults=(lapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
          DefaultLifeHistory=DefaultLifeHistory)) %>% ldply()
 
 ReserveResults$YieldBalance<- ReserveResults$Yield-ReserveResults$SQYield
@@ -105,6 +103,24 @@ if (RunAnalysis==F)
 {
   load(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
 }
+
+library(RColorBrewer) 
+
+display.brewer.all()
+
+FontColor<- 'black'
+
+a=(ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=Yield,group=m))+geom_point()+facet_wrap(~Species,scale='free'))
+a + scale_color_gradientn(colours=RColorBrewer::brewer.pal(9,'YlOrRd'))+theme_minimal(
+
+KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
+                     axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
+                     legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"))
+
+PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
+                   axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
+                   legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'))
+
 
 
 # browser()
@@ -561,7 +577,37 @@ if (RunAnalysis==F)
 # PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
 #                    axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
 #                    legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'))
+=======
+quartz()
+a=(ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=Yield,group=m))+geom_point()+facet_wrap(~Species,scale='free'))
+ a + scale_color_gradientn(colours=RColorBrewer::brewer.pal(9,'YlOrRd'))+theme_minimal()
+  
+save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
+
+}
+if (RunAnalysis==F)
+{
+  load(file=paste(BatchFolder,'NutsResults.Rdata',sep='')) 
+}
+
+
+library(RColorBrewer) 
+
+display.brewer.all()
+
+FontColor<- 'black'
+>>>>>>> Stashed changes
 # 
+
+
+KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
+                     axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
+                     legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"))
+
+PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
+                   axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
+                   legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'))
+
 # TimeToNPB$Species<- as.factor(TimeToNPB$Species)
 # 
 # TimeToNPB$Species <- reorder(TimeToNPB$Species, 1/TimeToNPB$BenefitYear)
@@ -570,12 +616,12 @@ if (RunAnalysis==F)
 # pdf(file=paste(BatchFolder,'Time to Positive NPB Barchart.pdf',sep=''),width=12,height=10)
 # 
 # # TimePlot<- ggplot(data=subset(TimeToNPB,m=='Equilibrium'), aes(x = factor(Species), y = BenefitYear,fill=round(PercentYieldIncrease,2)))+KeynoteTheme + geom_bar(stat = "identity")
-# TimePlot<- ggplot(data=subset(TimeToNPB,m=='Long Term Optimal'), aes(x = factor(Species), y = BenefitYear)) +PaperTheme + geom_bar(fill='dodgerblue3',stat = "identity")
+# TimePlot<- ggplot(data=subset(ReserveResults,m=='Long Term Optimal'), aes(x = factor(Species), y = BenefitYear)) +PaperTheme + geom_bar(fill='dodgerblue3',stat = "identity")
 # 
 # print(TimePlot+xlab('')
 #       +ylab('Years to Net Benefit')+geom_hline(aes(yintercept=sum(BenefitYear*TotalCatch)/sum(TotalCatch),size=3),color='red2'))
 # dev.off()
-# 
+# # 
 # 
 # 
 # KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
