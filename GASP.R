@@ -5,7 +5,7 @@
 #4.29/13
 #Summary: This suite of functions run a general age structured fishery model. Will prepare a short summary shortly to use the set. 
 
-GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,GroupFigName)
+GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,GroupFigName,Species,lh,Patches,FigureFolder)
 {
   
   RelativePatchSizes <- 1
@@ -43,12 +43,22 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   
   WeightArray<- array(0,c(TempTime+1,lh$MaxAge,NumPatches)) #blank storage for population array
   
+  LengthAtAge<- lh$LengthAtAge
+  
+  WeightAtAge<- lh$WeightAtAge
+  
+  FecundityAtAge<- lh$FecundityAtAge
+  
+  MaturityMode<- lh$MaturityMode
+  
+  MaturityAtAge<- lh$MaturityAtAge
+  
   WeightArray[1,,]<- PopArray[1,,] * WeightAtAge
   
   StoreFishedWeight<- as.data.frame(matrix(0,nrow=TempTime+1,ncol=NumPatches)) #Blank for fishing yields
   
   t<- 1 #leave at 1
-  
+
   NumberOfEggs<- Eggs(PopArray[1,,],FecundityAtAge,MaturityAtAge) #Produce eggs by patch    
   
   if (is.na(lh$B0[1]))
@@ -61,14 +71,14 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     }
     
     PopArray[1,lh$MaxAge,]<- PopArray[1,lh$MaxAge-1,]*((1-lh$m)/(1-(1-lh$m)))
+
+    lh$B0<- colSums(PopArray[1,,]*WeightAtAge)
     
-    lh$B0<<- colSums(PopArray[1,,]*WeightAtAge)
+    lh$SSB0<- colSums(PopArray[1,,]*WeightAtAge*MaturityAtAge)
     
-    lh$SSB0<<- colSums(PopArray[1,,]*WeightAtAge*MaturityAtAge)
+    lh$SSB0_R0<- lh$SSB0/lh$R0
     
-    lh$SSB0_R0<<- lh$SSB0/lh$R0
-    
-    lh$SSN0<<- colSums(PopArray[1,,]*MaturityAtAge)
+    lh$SSN0<- colSums(PopArray[1,,]*MaturityAtAge)
     
   }
   
@@ -78,24 +88,24 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   {
     SSB<- colSums(PopArray[1,,]*MaturityAtAge)
   }
-  
+
   while(t<TempTime) #Loop as long as you want
   {    
     
     
     RelocatedEggs<- MoveEggs(NumberOfEggs,'Common') #Move eggs
-    
+
     RecruitsPerPatch<- Recruits(RelocatedEggs,SSB,lh$DDForm,'Random',c(lh$RecDevMean,lh$RecDevSTD),Species,lh) #Calculate recruits
     
     SelectivityAtAge<- FishingSelectivity(LengthAtAge,Fleet$s50,Fleet$s95,1000)	#Calculate selectivity curve
     
     FishingAtAge<- DistFishingAtAge(FishingPressure[1,],SelectivityAtAge) #Calculate fishing mortality at age
     
-    FishingAtSpace<- DistFleet(FishingAtAge,SelectivityAtAge,PopArray[t,,]) #Distribute fishing fleet accordings to biomass
+    FishingAtSpace<- DistFleet(FishingAtAge,SelectivityAtAge,PopArray[t,,],lh=lh,Patches=Patches) #Distribute fishing fleet accordings to biomass
     
     Survival<- exp(-(FishingAtSpace+lh$m)) #calculate survival from each age class to the next
     
-    FishingYields<- GoFish(FishingAtSpace,Survival,PopArray[t,,])     
+    FishingYields<- GoFish(FishingAtSpace,Survival,PopArray[t,,],lh)     
     
     StoreFishedWeight[t,]<- FishingYields$Total 
     
@@ -107,7 +117,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     PopArray[t+1,lh$MaxAge,]<- PlusGroup #Add in the survivors of the plus group
     
-    PopArray[t+1,,]<- MoveAdults(PopArray[t+1,,],lh$Range,lh$MoveType)
+    PopArray[t+1,,]<- MoveAdults(PopArray[t+1,,],lh$Range,lh$MoveType,lh$MovementArray)
     
     NumberOfEggs<- Eggs(PopArray[t+1,,],FecundityAtAge,MaturityAtAge) #Produce eggs by patch    
     
@@ -145,12 +155,10 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
         WeightTrajectory<- t(as.matrix(colSums(WeightArray)))
       }
       warning(paste('Population never reached EQ, F is ',FishingPressure))
-      quartz()
-      matplot(WeightTrajectory,type='l',lwd=4,xlab='Time',ylab='B/Bmsy',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
-      
+#       quartz()
+#       matplot(WeightTrajectory,type='l',lwd=4,xlab='Time',ylab='B/Bmsy',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
+#       
     }
-    
-    
     if (Time=='EQ' & PopChange==0 & t>5) #If you're running to EQ, stop once population isn't changing
     {
       StopTime<- t-1
@@ -246,14 +254,14 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   
   if (MakePlots==1)
   {   
-    FormatFigure(paste(GroupFigName,'Total Numbers (N) Over Time.pdf'))
+    FormatFigure(paste(GroupFigName,'Total Numbers (N) Over Time.pdf'),FigureFolder)
     matplot(rowSums(PopTrajectory),type='l',lwd=4,xlab='Time',ylab='Total Numbers',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
     #     legend('topright',legend=paste('Patch',1:NumPatches),col=terrain.colors(2*NumPatches)[1:NumPatches],lty=1:NumPatches,lwd=4,bty='n')
     dev.off()  
     
     if (lh$Bmsy[1]!=-999)
     {
-      FormatFigure(paste(GroupFigName,'BvBmsy Over Time.pdf'))
+      FormatFigure(paste(GroupFigName,'BvBmsy Over Time.pdf'),FigureFolder=FigureFolder)
       matplot(rowSums(WeightTrajectory)/sum(lh$Bmsy),type='l',lwd=4,xlab='Time',ylab='B/Bmsy',col=terrain.colors(2*NumPatches)[1:NumPatches],bty='n')
       #       legend('topright',legend=paste('Patch',1:NumPatches),col=terrain.colors(2*NumPatches)[1:NumPatches],lty=1:NumPatches,lwd=4,bty='n')
       dev.off()
@@ -262,7 +270,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     if (LookAtLengths==1)
     {
-      FormatFigure(paste(GroupFigName,'Final Length Frequency Histogram.pdf'))
+      FormatFigure(paste(GroupFigName,'Final Length Frequency Histogram.pdf'),FigureFolder)
       
       FlatLengthFreq<- as.data.frame(FinalLengthFrequency)
       
@@ -283,7 +291,7 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
       
     }
     
-    FormatFigure(paste(GroupFigName,'Fishing Yields.pdf'))
+    FormatFigure(paste(GroupFigName,'Fishing Yields.pdf'),FigureFolder)
     
     FlatFishingYields<- as.data.frame(StoreFishedWeight)
     
@@ -305,10 +313,10 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     FlatFishingYields<- ddply(FlatFishingYields,c('Year','MPA'),summarize,Yields=sum(Yield))
     
-    print(xyplot(Yields ~Year  | MPA,data=FlatFishingYields,type='l',lwd=4))
-    dev.off()
+#     print(xyplot(Yields ~Year  | MPA,data=FlatFishingYields,type='l',lwd=4))
+#     dev.off()
     
-    FormatFigure(paste(GroupFigName,'Biomass Over Time.pdf'))
+#     FormatFigure(paste(GroupFigName,'Biomass Over Time.pdf'),FigureFolder)
     
     FlatBiomass<- as.data.frame(WeightTrajectory)
     
@@ -330,11 +338,11 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     FlatBiomass<- ddply(FlatBiomass,c('Year','MPA'),summarize,Biomass=sum(Biomass))
     
-    print(xyplot(Biomass ~ Year | MPA,data=FlatBiomass,type='l',lwd=4))
+#     print(xyplot(Biomass ~ Year | MPA,data=FlatBiomass,type='l',lwd=4))
+#     
+#     dev.off()
     
-    dev.off()
-    
-    FormatFigure(paste(GroupFigName,' Patch Biomass.pdf'))
+    FormatFigure(paste(GroupFigName,' Patch Biomass.pdf'),FigureFolder)
     
     FlatFinalBiomass<- as.data.frame(WeightTrajectory[dim(WeightTrajectory)[1],])
     
@@ -376,12 +384,12 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
   } 
   
-  return(list(NumatAge=PopArray,FinalNumAtAge=FinalNumAtAge,FishingYields=StoreFishedWeight,TotalPop=PopTrajectory,Performance=Performance)) 
+  return(list(NumatAge=PopArray,FinalNumAtAge=FinalNumAtAge,FishingYields=StoreFishedWeight,TotalPop=PopTrajectory,Performance=Performance,lh=lh)) 
   
   #   return(list(NumatAge=PopArray,FinalNumAtAge=FinalNumAtAge,FishingYields=StoreFishedWeight,TotalPop=PopTrajectory,Performance=Performance,FinalLengthFrequency= FinalLengthFrequency)) 
 } #Close population growth function
 
-FormatFigure<- function(name)
+FormatFigure<- function(name,FigureFolder)
 {
   pdf(file=paste(FigureFolder,name,sep=''),family=Font,pointsize=FontSize)
 }
@@ -398,7 +406,7 @@ Discount<- function(DataVec,DR,Time)
   return(list(DiscValues= DiscValues,NPV=NPV,CumValues=CumNPV))
 }
 
-Length <- function(ages)
+Length <- function(ages,lh)
 {
   Length<-lh$Linf*(1-exp(-1*lh$k*(ages-lh$t0)))
   return(Length)
@@ -422,7 +430,7 @@ Length <- function(ages)
 #   return(LengthAtAgeDist)
 # }
 
-LengthWiError<- function(Lengths,NumDraws) #Produce a distribution 
+LengthWiError<- function(Lengths,NumDraws,lh) #Produce a distribution 
 {
   
   HasNumber<- as.numeric(NumDraws>0)
@@ -449,7 +457,7 @@ LengthFrequency<- function(NumAtAge,MeanLengths)
   {
     for (f in 1:dim(NumAtAge)[1])
     {
-      NewLengths<- LengthWiError(MeanLengths[f],ceiling(NumAtAge[f,p]))
+      NewLengths<- LengthWiError(MeanLengths[f],ceiling(NumAtAge[f,p]),lh)
       #       VecLength<- 1:length(FreqMat[,p])
       #       Where<- (is.na(FreqMat[,p]))
       #       Where<- VecLength[Where]
@@ -465,9 +473,9 @@ LengthFrequency<- function(NumAtAge,MeanLengths)
   return(FreqMat)	
 }
 
-Weight<- function(Lengths,WeightForm)
+Weight<- function(Lengths,WeightForm,lh)
 {
-  LengthDist<- LengthWiError(Lengths,100)
+  LengthDist<- LengthWiError(Lengths,100,lh)
   
   if (WeightForm=='Exponential')
   {
@@ -493,12 +501,12 @@ Weight<- function(Lengths,WeightForm)
   return(weight)
 }  
 
-Fecundity <- function (Data,FecForm)
+Fecundity <- function (Data,FecForm,lh)
 { 
   
   if (FecForm=='Length')
   {
-    LengthDist<- LengthWiError(Data,100)
+    LengthDist<- LengthWiError(Data,100,lh)
     fecund<- rowMeans(lh$fa*LengthDist^lh$fb)
   }
   if (FecForm=='Weight')
@@ -508,20 +516,20 @@ Fecundity <- function (Data,FecForm)
   return(fecund)
 }
 
-Maturity <- function(Data,Mode)
+Maturity <- function(Data,Mode,lh)
 {
   
   if (Mode=='Length')
   {
     
     
-    Data<- Length(Data)
+    Data<- Length(Data,lh)
     
     s50<- lh$LengthMa50
     
     s95<- lh$LengthMa95
     
-    LengthDist<- LengthWiError(Data,100)
+    LengthDist<- LengthWiError(Data,100,lh)
     # mature<-rowMeans(round(1/(1+exp(lh$ma50*LengthDist+lh$ma95)),2))
     
     mature<- rowMeans(round(1/(1+exp(-log(19)*((LengthDist-s50)/(s95-s50)))),2))	
@@ -564,7 +572,7 @@ MoveEggs<- function(NumberOfEggs,PoolType)
   return(RelocateEggs)
 }
 
-MoveAdults<- function(NatAge,Distance,MoveType) ### Work in progress, place holder for adult movement
+MoveAdults<- function(NatAge,Distance,MoveType,MovementArray) ### Work in progress, place holder for adult movement
 {
   
   #   NatAge<- FinalNumAtAge
@@ -579,9 +587,7 @@ MoveAdults<- function(NatAge,Distance,MoveType) ### Work in progress, place hold
   
   if (MoveType=='2D')
   {
-    
-    MovedAdults<- t(lh$MovementArray %*% t(NatAge))
-    
+    MovedAdults<- t(MovementArray %*% t(NatAge))
   }
   
   
@@ -785,7 +791,7 @@ FishingSelectivity<- function(Lengths,s50,s95,NumDraws)
   # s95=45
   # NumDraws=1000
   
-    LengthDist<- LengthWiError(Lengths,100)
+    LengthDist<- LengthWiError(Lengths,100,lh)
     
     GroupSelectivity<- 1/(1+exp(-log(19)*((LengthDist-s50)/(s95-s50))))	
     
@@ -817,19 +823,19 @@ DistFishingAtAge<- function(Effort,Selectivity)
   return(FishMortalityAtAge)
 }
 
-AssignNTZ<- function(NTZSize,Position)
+AssignNTZ<- function(NTZSize,Location,BasePatches)
 {
   # AssignNTZ<- function(NTZSize,CurrentPopulation)
   # NTZSize<- 1
-  Patches<<- BasePatches
+  Patches<- BasePatches
   
-  if (Position=='Edge')
+  if (Location=='Edge')
   {
     NTZBorder<- min(NumPatches,max(0,round(NumPatches*NTZSize)))
     
-    Patches$MPALocations[0:NTZBorder]<<- 1
+    Patches$MPALocations[0:NTZBorder]<- 1
   }
-  if (Position=='Center')
+  if (Location=='Center')
   {
     
     CenterPatch<- (NumPatches/2)
@@ -838,9 +844,12 @@ AssignNTZ<- function(NTZSize,Position)
     
     Bounds<- round((CenterPatch+1-MPASize/2)):round(CenterPatch+MPASize/2)
     
-    Patches$MPALocations[Bounds]<<- 1
-    
+    if (NTZSize>0)
+    {
+    Patches$MPALocations[Bounds]<- 1
+    }
   }
+  return(Patches)
   #   # CurrentPopulation<- TempPop
   #   RelativePatchSize<- Patches$PatchSizes/sum(Patches$PatchSizes)
   #   OldPatches<- RelativePatchSize
@@ -855,18 +864,18 @@ AssignNTZ<- function(NTZSize,Position)
 }
 
 
-GoFish<- function(FishingMortality,TotalSurvive,Population)
+GoFish<- function(FishingMortality,TotalSurvive,Population,lh)
 {
   FishingProp<- FishingMortality/(FishingMortality+lh$m)
   DeadFish<- Population*(1-TotalSurvive)
   DeadFish[,Patches$MPALocations==1]<- 0
   NumbersAtAgeCaught<- DeadFish*FishingProp
-  WeightAtAgeCaught<- NumbersAtAgeCaught * WeightAtAge
+  WeightAtAgeCaught<- NumbersAtAgeCaught * lh$WeightAtAge
   TotalCaught<- colSums(WeightAtAgeCaught)
   return(list(NatAge=NumbersAtAgeCaught,WatAge=WeightAtAgeCaught,Total=TotalCaught))
 }
 
-FindReferencePoint<- function(FtoOptim,Target,TargetValue)
+FindReferencePoint<- function(FtoOptim,Target,TargetValue,Species,lh,UnfishedPopulation,Patches)
 {
   
   
@@ -880,10 +889,10 @@ FindReferencePoint<- function(FtoOptim,Target,TargetValue)
   FinalPopulation<- matrix(NA,nrow<- It,ncol=NumPatches)
   for (i in 1:It)
   {  
-    TempPop<- GrowPopulation(UnfishedPopulation,FTemp,'EQ',0,NA)
+    TempPop<- GrowPopulation(UnfishedPopulation,FTemp,'EQ',0,NA,Species,lh,Patches)
     TempFinalYield<-  TempPop$Performance$Yields
     FinalYield[i]<- TempFinalYield[length(TempFinalYield)]
-    FinalPopulation[i,]<- colSums(TempPop$FinalNumAtAge*WeightAtAge)  
+    FinalPopulation[i,]<- colSums(TempPop$FinalNumAtAge*lh$WeightAtAge)  
   }
   
   FinalYield<- mean(FinalYield)
@@ -898,7 +907,7 @@ FindReferencePoint<- function(FtoOptim,Target,TargetValue)
     
     if (sum(FinalPopulation)==0)
     {
-      FinalPopulation<- colSums(UnfishedPopulation*WeightAtAge)*exp(FTemp)
+      FinalPopulation<- colSums(UnfishedPopulation*lh$WeightAtAge)*exp(FTemp)
     }
     Ratio<- FinalPopulation/lh$Bmsy
     #     show(FinalPopulation)
@@ -926,22 +935,22 @@ MoveFleet<- function(BaseF,PercentClosed,FleetSpill,FleetModel)
 
 
 
-FindOptimalMPASize<- function(MPASizes,FTemp,FleetSpill,StartPop) #Given a number of MPAs and a fishing pressure find optimal size of each MPA
+FindOptimalMPASize<- function(MPASizes,FTemp,FleetSpill,StartPop,Species,lh,BasePatches) #Given a number of MPAs and a fishing pressure find optimal size of each MPA
 {
   
   #   Patches<- BasePatches
   #   Patches$MPALocations<- c(1,0)
   #   NewPop<- AssignNTZ(MPASizes,StartPop)
   
-  AssignNTZ(MPASizes,ReservePosition)
+  Patches<- AssignNTZ(MPASizes,ReservePosition,BasePatches)
   #   show(Patches$MPALocation)
   NewF<- MoveFleet(FTemp,MPASizes,FleetSpill,0)
   # NewPop<- ShiftMPABorders(StartPop)
   #    show(NewF)
-  TempYields<- GrowPopulation(StartPop,NewF,'EQ',0,"Eh")$Performance$Yields
+  TempYields<- GrowPopulation(StartPop,NewF,'EQ',0,"Eh",Species,lh,Patches)$Performance$Yields
   EQYields<- TempYields[length(TempYields)]
   # show(-EQYields)
-  Patches<<- BasePatches
+#   Patches<<- BasePatches
   return(-EQYields)	
 }
 
@@ -1077,7 +1086,7 @@ MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime,GrowMode)
   
   return(MPASize)
 }
-FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime,Alpha,GrowMode)
+FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime,Alpha,GrowMode,Species,lh,BasePatches)
 {
   
   Yields<- rep(NA,TimeFrame)
@@ -1095,11 +1104,11 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
       MPASize<- MPAFunction(OptVector,t,OptSize,Mode,EvalTime,GrowMode)
     }
     
-    AssignNTZ(MPASize,ReservePosition)
+    Patches<- AssignNTZ(MPASize,ReservePosition,BasePatches)
     
     NewF<- MoveFleet(FTemp,MPASize,FleetSpill,0)
     
-    NewPop<- GrowPopulation(PassPop,NewF,1,0,'eh')
+    NewPop<- GrowPopulation(PassPop,NewF,1,0,'eh',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder)
     
     Yields[t]<- NewPop$Performance$Yields
     
@@ -1133,7 +1142,7 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
   
   #Change this to be alpha*NPB+ (1-alpha)*(NP)
   
-  Patches<<- BasePatches
+#   Patches<<- BasePatches
   
   #   } #Close if statement on starting objecive
   
@@ -1154,7 +1163,7 @@ FindMaxInterestRate<- function(InterestRate,LoanTime,LoanAmount,Surplus)
   return((LoanAdjustedBalance^2))
 } 
 
-movArray<-function(SpaceC,sdy,Form)
+movArray<-function(SpaceC,sdy,Form,FigureFolder)
 {
   
   if (Form=='Wrap')
@@ -1205,7 +1214,7 @@ movArray<-function(SpaceC,sdy,Form)
     parea<-p.all[,(P+1):(2*P)]
     SpaceIn<-p1+p2+parea
     
-    FormatFigure('Movement Probabilities.pdf')
+    FormatFigure('Movement Probabilities.pdf',FigureFolder)
     contour(SpaceIn)
     dev.off()
     
@@ -1242,7 +1251,7 @@ movArray<-function(SpaceC,sdy,Form)
     
     dim(SpaceIn)<- c(NumPatches,NumPatches)
     
-    FormatFigure('Movement Probabilities.pdf')
+    FormatFigure('Movement Probabilities.pdf',FigureFolder)
     contour(SpaceIn)
     dev.off()
   }
@@ -1250,13 +1259,13 @@ movArray<-function(SpaceC,sdy,Form)
   return(SpaceIn)
 }
 
-DistFleet<- function(FishingAtAge,SelectivityAtAge,NumAtAge)
+DistFleet<- function(FishingAtAge,SelectivityAtAge,NumAtAge,lh,Patches)
 {
   ### Distribute fishing effort by proportional biomass in fishable patches
   
   #      NumAtAge<- PopArray[1,,]
   
-  WeightsAtAge<- NumAtAge *WeightAtAge
+  WeightsAtAge<- NumAtAge *lh$WeightAtAge
   
   CommercialBiomass<- (WeightsAtAge * (SelectivityAtAge))
   
