@@ -46,8 +46,6 @@ RunAnalysis<- FALSE
 if (RunAnalysis==TRUE)
 {
 
-if (RunAnalysis==T)
-{
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
 
 LongDataNames<- c('Species','Movement','Steepness','MPAScenario','FishingScenario','FvFmsy','OptNTZ','NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
@@ -111,7 +109,7 @@ display.brewer.all()
 FontColor<- 'black'
 
 a=(ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=Yield,group=m))+geom_point()+facet_wrap(~Species,scale='free'))
-a + scale_color_gradientn(colours=RColorBrewer::brewer.pal(9,'YlOrRd'))+theme_minimal(
+a + scale_color_gradientn(colours=RColorBrewer::brewer.pal(9,'YlOrRd'))+theme_minimal()
 
 KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
                      axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
@@ -577,36 +575,6 @@ PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,c
 # PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
 #                    axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
 #                    legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'))
-=======
-quartz()
-a=(ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=Yield,group=m))+geom_point()+facet_wrap(~Species,scale='free'))
- a + scale_color_gradientn(colours=RColorBrewer::brewer.pal(9,'YlOrRd'))+theme_minimal()
-  
-save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
-
-}
-if (RunAnalysis==F)
-{
-  load(file=paste(BatchFolder,'NutsResults.Rdata',sep='')) 
-}
-
-
-library(RColorBrewer) 
-
-display.brewer.all()
-
-FontColor<- 'black'
->>>>>>> Stashed changes
-# 
-
-
-KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
-                     axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
-                     legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"))
-
-PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
-                   axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
-                   legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'))
 
 # TimeToNPB$Species<- as.factor(TimeToNPB$Species)
 # 
