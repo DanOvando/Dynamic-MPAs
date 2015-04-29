@@ -54,7 +54,7 @@ dir.create(paste(BatchFolder,sep=''))
 
 # MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
 
-MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ')
+MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
 
 LifeHistories<- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors=F)
 
