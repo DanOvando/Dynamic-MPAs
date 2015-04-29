@@ -24,7 +24,7 @@ InitialPopulation<- 1000 #Seed for initial population
 CollapseThreshold<- 0.1
 LookAtLengths<- 0
 ReservePosition<- 'Center'
-OptTime<- 65 #Time Horizon to optimize over
+OptTime<- 50 #Time Horizon to optimize over
 Alpha<- 0.5
 
 
@@ -33,10 +33,12 @@ TimeToRun<- OptTime+1
 DiscRates<- 0.1
 
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
-BatchFolder<- 'Results/3.0/'
+BatchFolder<- 'Results/3.1/'
 
-RunAnalysis<- 1
+RunAnalysis<- FALSE
 
+if (RunAnalysis==T)
+{
 DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
 
 LongDataNames<- c('Species','Movement','Steepness','MPAScenario','FishingScenario','FvFmsy','OptNTZ','NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
@@ -45,7 +47,13 @@ dir.create(paste(BatchFolder,sep=''))
 
 # MPANames<- c('Status Quo','EqNTZ','Rotate','SNTZ','Basic','GNTZ','OptNTZ')
 
+<<<<<<< HEAD
 MPANames<- c('StatusQuo','EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
+=======
+# MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
+
+MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
+>>>>>>> Prepare-Function-Run
 
 LifeHistories<- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors=F)
 
@@ -544,6 +552,7 @@ dev.off()
 
 
 
+<<<<<<< HEAD
 KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
                      axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25),axis.text.y=element_text(size=30),axis.title.x=element_text(size=25),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=25),
                      legend.text=element_text(size=20,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"),legend.key.size = unit(1.5, "cm"))
@@ -662,6 +671,506 @@ TimeToNPB$BenefitYear[is.na(TimeToNPB$BenefitYear)]<- TimeToRun
 
 # pdf(file=paste(BatchFolder,'Time to Positive NPB.pdf',sep=''))
 # barchart(~BenefitYear | Species,group=m,data=TimeToNPB,auto.key=T,xlab='Years to Positive NPB')
+=======
+save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
+}
+if (RunAnalysis==F)
+{
+  load(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
+}
+
+
+# browser()
+# 
+# #   quartz()
+# 
+# 
+# for (s in 1:length(SpeciesList))
+# {
+#   Species<- SpeciesList[s] #species file to load
+#   
+#   StoreRun<- paste(BatchFolder,Species,sep='') #1 if you want to create a seeded folder to store results, 0 if you want it in the generic working folder
+#   
+#   source('BetterNutzControlfile.R')
+#   
+#   BasePatches<- Patches
+#   
+#   LifeHistory<- LifeHistories[s,]
+#   
+#   for (l in 1:length(LifeVars))
+#   {
+#     
+#     Where1<- LifeColumns ==LifeVars[l]
+#     
+#     Where2<- names(lh)==LifeVars[l]
+#     
+#     lh[Where2]<- LifeHistory[Where1]
+#     
+#   }
+#   
+#   lh$LengthMa95<-  1.01* lh$LengthMa50
+#   
+#   lh$AgeMa95<-  1.01* lh$AgeMa50
+#   
+#   lh$MoveType<- '2D'
+#   
+#   lh$MovementArray<- movArray(NumPatches,((lh$Range)*NumPatches)/5,'Wrap')
+#   
+#   lh$Bmsy<- -999
+#   
+#   LengthAtAge<- Length(1:lh$MaxAge) #Calculate length at age vector
+#   
+#   WeightAtAge<- Weight(LengthAtAge,lh$WeightForm) #Calculate weight at age vector
+#   
+#   FecundityAtAge<- Fecundity(WeightAtAge,'Weight') #Calculate Fecundity at age vector
+#   
+#   MaturityMode<- as.character(LifeHistory$MaturityMode)
+#   
+#   MaturityAtAge<- Maturity(1:lh$MaxAge, MaturityMode) # Calculate maturity at age vector
+#   
+#   if (grepl('Shark',Species))
+#   {
+#     lh$R0<- 100*Patches$HabQuality
+#   }
+#   
+#   pdf(file=paste(FigureFolder,'Life History.pdf',sep=''),width=8,height=6)
+#   par(mfrow=c(2,2),mar=c(4,4,1,1),oma=c(4,6,2,6))
+#   plot(LengthAtAge/10,ylab='Length(cm)',type='l',lwd=2,xlab=NA,xaxt='n')
+#   title(main=Species)
+#   plot(WeightAtAge*2.2,ylab='Weight(lbs)',type='l',lwd=2,xlab=NA,xaxt='n')
+#   plot(MaturityAtAge,ylab='Probability Mature',type='l',lwd=2,xlab='Age')
+#   plot(FecundityAtAge,ylab='# of Eggs',type='l',lwd=2,xlab='Age')
+#   
+#   dev.off()
+#   
+#   show(SpeciesList[s])
+#   
+#   ####### SET UP INITIAL POPULATION ########
+#   #     Rprof(tmp <- tempfile(),line.profiling=T)
+#   
+#   EQPopulation<- GrowPopulation(1000,rep(0,NumPatches),'EQ',0,'EQ Run',Species,lh) #Run the population out to unfished equilibrium
+#   
+#   #     Rprof() 
+#   #     summaryRprof(tmp)
+#   #     unlink(tmp)
+#   
+#   lh$CarryingCapacityWeight<- (colSums(EQPopulation$FinalNumAtAge*WeightAtAge)) #Calculate carrying capacity in weight
+#   
+#   UnfishedPopulation<- EQPopulation$FinalNumAtAge #Unfished numbers at age
+#   
+#   ####### Calculate Reference Points ########
+#   
+#   Fmsy<- optimize(log(lh$m[1]),f=FindReferencePoint,Target='FMSY',TargetValue=NA,lower=-10,upper=4,Species=Species,
+#                   UnfishedPopulation=UnfishedPopulation,lh=lh,Patches=Patches) #Find FMSY  
+#   
+#   Fmsy$par<- exp(Fmsy$minimum) 
+#   
+#   BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',0,'Bmsy Run') #Bmsy Population
+#   
+#   lh$Nmsy<- (colSums(BmsyPopulation$FinalNumAtAge)) #Nmsy
+#   
+#   lh$Bmsy<- colSums(BmsyPopulation$FinalNumAtAge*WeightAtAge) #Bmsy
+#   
+#   SystemBmsyStorage[s,]<- data.frame(Species,sum(lh$Bmsy),stringsAsFactors=F)
+#   
+#   MsyFishing<- GrowPopulation(BmsyPopulation$FinalNumAtAge,rep(Fmsy$par,NumPatches),OptTime,0,'MSY Run') #Bmsy Population
+#   
+#   Fleet$MSY_NPV<- MsyFishing$Performance$DiscYields$NPV
+#   
+#   F25<- optimize(log(2*Fmsy$par),f=FindReferencePoint,Target='BvBmsy',TargetValue=0.25,lh=lh,Species=Species,UnfishedPopulation=UnfishedPopulation
+#                  ,lower=-10,upper=4) #Find F that results in target B/Bmsy
+#   
+#   F25$par<- exp(F25$minimum)
+#   
+#   B25Population<- GrowPopulation(UnfishedPopulation, rep(F25$par,NumPatches),'EQ',0,'B25 Run')
+#   
+#   ####### RUN MPA SIMULATIONS ########
+#   
+#   MPAs<- as.data.frame(matrix(NA,ncol=length(MPANames),nrow=OptTime+1))
+#   
+#   colnames(MPAs)<- MPANames
+#   
+#   #     TimeToRun<-dim(MPAs)[1]
+#   
+#   EvalTime<- OptTime #Time span to evaluate results on
+#   RunTime<- 'Custom'
+#   PropNames<- NULL
+#   for (m in 1:dim(MPAs)[2])
+#   {
+#     PropNames[m]<-MPANames[m]      
+#   }
+#   
+#   FScenarios<- c(F25$par) #load in fishing scenarios
+#   
+#   BaseConditions<- as.data.frame(matrix(NA,nrow= length(FScenarios),ncol=3))
+#   colnames(BaseConditions)<- c('Yield','Biomass','Numbers')
+#   
+#   OptimalConditions<- as.data.frame(matrix(NA,nrow= length(FScenarios),ncol=3))
+#   colnames(OptimalConditions)<- c('Yield','Biomass','Numbers')
+#   
+#   cc<- 0
+#   
+#   for (f in 1:length(FScenarios)) 
+#   {
+#     show(paste('F is ',f))
+#     Patches<- BasePatches
+#     BasePop<- GrowPopulation(EQPopulation$FinalNumAtAge,FScenarios[f],'EQ',1,paste('FvFmsy is',round(FScenarios[f]/Fmsy$par,2)))
+#     
+#     
+#     StartPop<- BasePop$FinalNumAtAge
+#     BaseConditions$Yield[f]<- round(BasePop$Performance$Yields[length(BasePop$Performance$Yields)],2)
+#     BaseConditions$Biomass[f]<- round(sum(WeightAtAge %*% BasePop$FinalNumAtAge),2)
+#     BaseConditions$Numbers[f]<- round(sum(BasePop$FinalNumAtAge),2)
+#     
+#     wtf<- seq(0,1,length.out=20)
+#     
+#     arg=ldply(lapply(wtf,FindOptimalMPASize,FTemp=FScenarios[f],StartPop=StartPop,FleetSpill=FleetSpill))
+#     
+#     mguess<- wtf[which(arg==min(arg))[1]]
+#     
+#     OptNTZSize<- 	optim(mguess,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FScenarios[f],StartPop=StartPop,FleetSpill=FleetSpill) #You need a better optimization here, gets really stuck with any kind of stochasticity
+#     
+#     OptNTZSize<-   optim(OptNTZSize$par,f=FindOptimalMPASize,lower=0,upper=0.999,FTemp=FScenarios[f],StartPop=StartPop,FleetSpill=FleetSpill) #You need a better optimization here, gets really stuck with any kind of stochasticity
+#     
+#     mcheck<- data.frame(wtf,-(arg))
+#     
+#     colnames(mcheck)<- c('MPASize','NPB')
+#     
+#     pdf(file=paste(FigureFolder,'MPA Check.pdf',sep=''))
+#     print(ggplot(data=mcheck,aes(MPASize,NPB))+geom_point()+geom_vline(xintercept=OptNTZSize$par))
+#     dev.off()
+#     
+#     Patches<- BasePatches
+#     
+#     Int=seq(0,1,length.out=20)   
+#     
+#     Flip=seq(.001,1,length.out=20)   
+#     
+#     ObjMat<- matrix(NA,nrow=length(Int)*length(Flip),ncol=3)
+#     
+#     l<- 0
+#     for (i in 1:length(Int))
+#     {
+#       for (o in 1:length(Flip))
+#       {
+#         l=l+1
+#         show(l)
+#         
+#         ObjMat[l,3]<- -FindMPATrajectory(c(Int[i],Flip[o]),Mode='LinearPlus',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=1,OptMode='Function',BaseYields=BaseConditions$Yield[f],GrowMode='Shrink')
+#         
+#         ObjMat[l,1:2]<- c(Int[i],Flip[o])
+#       }
+#     }
+#     
+#     ObjMat<- as.data.frame(ObjMat)
+#     colnames(ObjMat)<- c('Intercept','FlipYear','Obj')
+#     pdf(file=paste(FigureFolder,'GridSearch.pdf',sep=''))
+#     p <- ggplot(ObjMat, aes(x=Intercept,y=FlipYear))
+#     print(p + geom_tile(aes(fill=Obj)))
+#     dev.off()
+#     
+#     BestGuess<- ObjMat[ObjMat$Obj==max(ObjMat$Obj,na.rm=T) & is.na(ObjMat$Obj)==F,1:2]
+#     
+#     #       OptMPAPath<- (nlminb(log(jitter(as.numeric(BestGuess))),FindMPATrajectory,lower=log(c(0,.001)),upper=log(c(1,0.6)),
+#     #                            control=list(trace=T,step.min=.01,step.max=.1),
+#     #                            Mode='LinearPlus',EvalTime=OptTime,FTemp= FScenarios[f],
+#     #                            TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,
+#     #                            Alpha=1,GrowMode='Grow',OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#     #       
+#     #       hchange=function(par,lower,upper,dist,round=TRUE,...)
+#     #       { D=length(par) # dimension
+#     #         show(par)
+#     #         step=dist(D,...) # slight step
+#     #         if(round) step=round(step)
+#     #         par1=par+step
+#     #         # return par1 within [lower,upper]:
+#     #         return(ifelse(par1<lower,lower,ifelse(par1>upper,upper,par1)))
+#     #       }
+#     #       
+#     #       
+#     #       bchange=function(par) # binary change
+#     #       { 
+#     #         D=length(par)
+#     #         hchange(par,lower=c(0,.001),upper=c(1,0.6),rnorm,mean=0,sd=1)
+#     #       }
+#     #         
+#     #       C=list(maxit=10000,temp=1000,trace=TRUE,REPORT=1)
+#     #       
+#     #       s=(optim(BestGuess,f=FindMPATrajectory,gr=bchange,method="SANN",control=C,Mode='LinearPlus',EvalTime=OptTime,FTemp= FScenarios[f],
+#     #               TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,
+#     #               Alpha=1,GrowMode='Grow',OptMode='Function',BaseYields=BaseConditions$Yield[f]))
+#     #       
+#     #       s=(optim(BestGuess,f=FindMPATrajectory,method='SANN',control=C,Mode='LinearPlus',EvalTime=OptTime,FTemp= FScenarios[f],
+#     #                TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,
+#     #                Alpha=1,GrowMode='Grow',OptMode='Function',BaseYields=BaseConditions$Yield[f]))
+#     #       
+#     #       
+#     #       
+#     #       TestGrow<- (nlminb(c(0.3,0.14,0.01),FindMPATrajectory,lower=c(0,0,0),upper=c(8,200,1),Mode='Logit Grow',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=1,GrowMode='Grow',OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#     #       
+#     #       TestShrink1<- (nlminb(c(.2,.8,.5),FindMPATrajectory,lower=c(0,0,0),upper=c(8,10,1),Mode='Logit Shrink',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=1,GrowMode='Grow',OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#     #       
+#     #       TestShrink2<- (nlminb(c(.1,.1,.1),FindMPATrajectory,lower=c(0,0,0),upper=c(8,10,1),Mode='Logit Shrink',EvalTime=OptTime,FTemp= FScenarios[f],TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,OptSize=OptNTZSize$par,Alpha=1,GrowMode='Grow',OptMode='Function',BaseYields=BaseConditions$Yield[f]))    
+#     #       
+#     
+#     #       
+#     #       quartz()
+#     #       plot(MPAFunction(TestGrow$par,0:OptTime, OptNTZSize$par,'Logit Grow',EvalTime),ylim=c(0,1)) 
+#     #       lines(MPAFunction(TestShrink$par,0:OptTime, OptNTZSize$par,'Logit Shrink',EvalTime)) 
+#     #       
+#     
+#     OptNTZSize$par<- round(OptNTZSize$par,4)
+#     if (OptNTZSize$convergence>0)
+#     {
+#       warning(paste('Failed to converge on run ',f))
+#     }
+#     
+#     Patches<- BasePatches  
+#     
+#     AssignNTZ(OptNTZSize$par,ReservePosition)
+#     
+#     FTemp<- MoveFleet(FScenarios[f], OptNTZSize$par,FleetSpill,0)
+#     
+#     OptPop<- GrowPopulation(StartPop,FTemp,'EQ',0,paste('Opt MPA is',round(OptNTZSize$par,2),'when FvFmsy is',round(FScenarios[f]/Fmsy$par,2)))
+#     
+#     OptimalConditions$Yield[f]<-(OptPop$Performance$Yields[length(OptPop$Performance$Yields)])
+#     
+#     OptimalConditions$Biomass[f]<-(sum(WeightAtAge %*% OptPop$FinalNumAtAge))
+#     
+#     OptimalConditions$Numbers[f]<-(sum(OptPop$FinalNumAtAge))
+#     
+#     MPAs$StatusQuo<- 0
+#     
+#     MPAs$EqNTZ<- c(0,rep(OptNTZSize$par,OptTime))
+#     
+#     MPAs$SNTZ<- c(0,seq(min(1,1.5*OptNTZSize$par),OptNTZSize$par,length.out=OptTime))
+#     
+#     MPAs$GNTZ<- c(0,seq(min(1,0.5*OptNTZSize$par),OptNTZSize$par,length.out=OptTime))
+#     
+#     #       MPAs$OptNTZ<- c(0, MPAFunction(OptMPAPath$par,1:OptTime, OptNTZSize$par,'LinearPlus',EvalTime))
+#     
+#     MPAs$OptNTZ<- c(0, MPAFunction(as.matrix(BestGuess),1:OptTime, OptNTZSize$par,'LinearPlus',EvalTime))
+#     
+#     MPAs$CatchShareEqNTZ<- MPAs$EqNTZ
+#     
+#     pdf(file=paste(FigureFolder,'FvFmsy is',round(FScenarios[f]/Fmsy$par,2),' MPAs.pdf'),family=Font,pointsize=12,width=6,height=4)
+#     par(mar=c(5.1,4.1,4.1,6.1),xpd=T)
+#     matplot((MPAs),type='l',col=rainbow(1.5*dim(MPAs)[2])[1:dim(MPAs)[2]],lty=1,xlab='Year',ylab='% NTZ',lwd=4,bty='n')
+#     legend('topright',inset=c(-.3,0),legend=MPANames,col=rainbow(1.5*dim(MPAs)[2])[1:dim(MPAs)[2]],lty=1,cex=.5)
+#     dev.off()
+#     
+#     for (m in 1:dim(MPAs)[2])
+#     {
+#       
+#       show(paste('M is ',m))
+#       
+#       TempPop<- StartPop
+#       Patches<- BasePatches
+#       
+#       cc<- cc+1
+#       for (y in 1:TimeToRun)
+#       {
+#         c<- c+1
+#         
+#         CurrentMPA<- MPAs[y,m]
+#         if (y>dim(MPAs)[1])
+#         {
+#           #             CurrentMPA<- MPAs[dim(MPAs)[2],m]
+#           CurrentMPA<-  OptNTZSize$par
+#           
+#         }
+#         
+#         AssignNTZ(CurrentMPA,ReservePosition)
+#         
+#         FTemp<- FScenarios[f] 
+#         
+#         FVec<- MoveFleet(FTemp,CurrentMPA,FleetSpill,0)
+#         
+#         if (MPANames[m]=='CatchShareEqNTZ'& Year>1)
+#         {
+#           #             FVec<- MoveFleet(FTemp,CurrentMPA,0,0)            
+#           FVec<- MoveFleet(Fmsy$par,CurrentMPA,0,0)            
+#           
+#         }
+#         
+#         PassPop<- GrowPopulation(TempPop,FVec,1,0,'TEST') #grow the new population
+#         
+#         TempPop<- PassPop$FinalNumAtAge
+#         
+#         #           NPBTimeSeries<- Discount(ResultStorage$Yield[1:y]-BaseConditions$Yield[f],Fleet$YieldDiscount,y)$NPV#Yield balance through 10
+#         
+#         TotalStorage[c,]<-data.frame(SpeciesList[s],MPANames[m],f,FScenarios[f],CurrentMPA,y,PassPop$Performance$MeanYield,PassPop$Performance$MeanBiomass,PassPop$Performance$MeanNumbers, BaseConditions$Yield[f],BaseConditions$Numbers[f], BaseConditions$Biomass[f], 
+#                                      OptimalConditions$Yield[f], OptimalConditions$Numbers[f], OptimalConditions$Biomass[f], OptNTZSize$par,stringsAsFactors=F)
+#         
+#         TotalStorage$YieldBalance<- TotalStorage$Yield-TotalStorage$SQYield
+#         
+#         TotalStorage$ScenId<- with(TotalStorage,paste(Species,m,f,sep='-'))
+#         
+#         TotalStorage<- ddply(TotalStorage,c('ScenId'),mutate,
+#                              PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
+#                              NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>% subset(m!='StatusQuo')
+#         #   quartz()
+#         
+#       } #Close TimeToRun loop   
+#       
+#     } #Close loop over MPA proposals
+#     
+#   } #Close loop over fishing scenarios
+#   
+# } #Close species list loop
+# 
+# TotalStorage$YieldBalance<- TotalStorage$Yield-TotalStorage$SQYield
+# 
+# TotalStorage$ScenId<- with(TotalStorage,paste(Species,m,f,sep='-'))
+# 
+# TotalStorage<- ddply(TotalStorage,c('ScenId'),mutate,
+#                      PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
+#                      NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>% subset(m!='StatusQuo')
+# #   quartz()
+# # ggplot(TotalStorage,aes(Year,NPB,color=m))+geom_line()+facet_wrap(~Species)
+# 
+# TotalStorage$m<- as.factor(TotalStorage$m)
+# 
+# levels(TotalStorage$m)<- c('Catch Share','Long Term Optimal','Grow','Short Term Optimal','Shrink')
+# 
+# write.csv(file=paste(ResultFolder,'Total Results.csv'),TotalStorage)
+# 
+# save.image(file=paste(ResultFolder,'Completed Workspace.rdata'))
+# 
+# 
+# } #Run Analysis If
+# if (RunAnalysis==0)
+# {
+#   load(paste(BatchFolder,'Completed Workspace.rdata'))
+# }
+# 
+# # quartz()
+# # ggplot(data=PlotStorage,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species)
+# 
+# Font<- "Helvetica" #Font type for figures
+# 
+# 
+# # levels(PlotStorage$m)<- c('Long Term Optimal','Grow','Shrink','Short Term Optimal')
+# 
+# # SubScenarios<- c('Long Term Optimal','Short Term Optimal','Grow','Shrink')
+# 
+# SubScenarios<- c('Long Term Optimal','Short Term Optimal','Grow','Shrink','Catch Share')
+# 
+# for (s in 1:length(SpeciesList))
+# {
+#   
+#   for (m in 1:length(SubScenarios))
+#   {
+#     
+#     for (ff in 1:length(FNames))
+#     {
+#       
+#       WhereIsIt1<- (AllSpeciesExperimentResults$Species==SpeciesList[s]& AllSpeciesExperimentResults$MPAScenario==SubScenarios[m] & AllSpeciesExperimentResults$FishingScenario==ff)
+#       
+#       WhereIsIt2<- (PlotStorage$Species==SpeciesList[s]& PlotStorage$m==SubScenarios[m] & PlotStorage$f==FNames[ff])
+#       
+#       WherePositiveYields<- which(PlotStorage$Species==SpeciesList[s]& PlotStorage$m==SubScenarios[m] & PlotStorage$f==FNames[ff] & PlotStorage$YieldBalance>=0 & PlotStorage$Year>1)[1]
+#       
+#       PlotStorage$PositiveYields[WherePositiveYields]<- 1
+#       
+#       WhereYields<- which(PlotStorage$Species==SpeciesList[s]& PlotStorage$m==SubScenarios[m] & PlotStorage$f==FNames[ff] & PlotStorage$Year>1 & PlotStorage$Year<=EvalTime)
+#       
+#       NegativeYields<-  Discount(pmin(0,PlotStorage$YieldBalance[WhereYields]),Fleet$YieldDiscount,EvalTime-1)$NPV
+#       
+#       StatusQuoYields<-  Discount(PlotStorage$SQYield[WhereYields]*as.numeric(PlotStorage$YieldBalance[WhereYields]<=0),Fleet$YieldDiscount,EvalTime-1)$NPV
+#       
+#       PriceIncreaseNeeded<- 100*(StatusQuoYields/(StatusQuoYields+NegativeYields)-1) # %increase in prices needed to match status quo profits
+#       
+#       YieldBalance<- PlotStorage$YieldBalance[WhereYields]
+#       
+#       LoanTime<- 20
+#       
+#       RequestedLoan<- Discount(pmin(0,YieldBalance[1:LoanTime]),Fleet$YieldDiscount,LoanTime)$NPV #Discounted Requested Loan Amount. 
+#       
+#       AvailableSurplus<- Discount(pmax(0,YieldBalance[1:LoanTime]),Fleet$YieldDiscount,LoanTime)$NPV #Discounted Requested Loan Amount. 
+#       
+#       if (RequestedLoan!=0)
+#       {
+#         
+#         MaxInterestRate<- optim(-4,FindMaxInterestRate,LoanTime=LoanTime,LoanAmount=-RequestedLoan,Surplus=AvailableSurplus,lower=-10,upper=10,method='Brent')$par
+#         
+#         PlotStorage$MaxInterestRate[WhereIsIt2]<- 100*exp(MaxInterestRate)
+#         
+#         AllSpeciesExperimentResults$MaxInterestRate[WhereIsIt1]<- round(100*exp(MaxInterestRate),2)
+#         
+#       }
+#       
+#       PlotStorage$PriceIncreaseNeeded[WhereIsIt2]<- PriceIncreaseNeeded
+#       
+#       AllSpeciesExperimentResults$PriceIncreaseNeeded[WhereIsIt1]<- PriceIncreaseNeeded
+#       
+#       
+#     }
+#   }
+#   
+# }
+# 
+# PlotStorage<- PlotStorage[,colnames(PlotStorage)!='Bmsy']
+# 
+# PlotStorage<- join(PlotStorage,SystemBmsyStorage,by='Species')
+# 
+# PlotStorage$PosYears<- PlotStorage$Year * PlotStorage$PositiveYields
+# 
+# PlotStorage$PosNPB<- PlotStorage$NPB * PlotStorage$PositiveYields
+# 
+# TimeToNPB<- ddply(PlotStorage[PlotStorage$f=='F25',],c('Species','m'),summarize,BenefitYear=which(NPB>0)[1],PercentYieldIncrease=round(100*(Yield[max(Year)]/Yield[1]-1),0),TotalCatch=sum(Yield),Fish=sum(Biomass))
+# 
+# #theme_get
+# FontColor<- 'black'
+# 
+# EQTimeToNPB<- subset(TimeToNPB,m=='Equilibrium')
+# 
+# SpeciesOrder<- order(EQTimeToNPB$PercentYieldIncrease)
+# 
+# KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
+#                      axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
+#                      legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"))
+# 
+# PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
+#                    axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
+#                    legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'))
+# 
+# TimeToNPB$Species<- as.factor(TimeToNPB$Species)
+# 
+# TimeToNPB$Species <- reorder(TimeToNPB$Species, 1/TimeToNPB$BenefitYear)
+# 
+# 
+# pdf(file=paste(BatchFolder,'Time to Positive NPB Barchart.pdf',sep=''),width=12,height=10)
+# 
+# # TimePlot<- ggplot(data=subset(TimeToNPB,m=='Equilibrium'), aes(x = factor(Species), y = BenefitYear,fill=round(PercentYieldIncrease,2)))+KeynoteTheme + geom_bar(stat = "identity")
+# TimePlot<- ggplot(data=subset(TimeToNPB,m=='Long Term Optimal'), aes(x = factor(Species), y = BenefitYear)) +PaperTheme + geom_bar(fill='dodgerblue3',stat = "identity")
+# 
+# print(TimePlot+xlab('')
+#       +ylab('Years to Net Benefit')+geom_hline(aes(yintercept=sum(BenefitYear*TotalCatch)/sum(TotalCatch),size=3),color='red2'))
+# dev.off()
+# 
+# 
+# 
+# KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
+#                      axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25),axis.text.y=element_text(size=30),axis.title.x=element_text(size=25),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=25),
+#                      legend.text=element_text(size=20,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"),legend.key.size = unit(1.5, "cm"))
+# 
+# KeynoteTheme2<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
+#                       axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,angle=0),axis.text.y=element_text(size=30),axis.title.x=element_text(size=25),axis.text.x=element_text(color=FontColor,size=25),
+#                       legend.text=element_text(size=20,color='black'),legend.title=element_text(size=25,color='black'),legend.background=element_rect(fill="gray90"),legend.key.size = unit(3, "cm"))
+# 
+# PaperTheme2<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
+#                     axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,angle=0),axis.text.y=element_text(size=30),axis.title.x=element_text(size=25),axis.text.x=element_text(color=FontColor,size=25),
+#                     legend.text=element_text(size=20,color='black'),legend.title=element_text(size=25,color='black'),legend.key.size = unit(3, "cm"))
+# 
+# 
+# 
+# pdf(file=paste(BatchFolder,'Time to Positive NPB for EQ and Opt Barchart.pdf',sep=''),width=12,height=10)
+# TimePlot<- ggplot(data=subset(TimeToNPB,m=='Long Term Optimal' | m=='Short Term Optimal'), aes(x = Species, y = BenefitYear,fill=m)) + geom_bar(stat = "identity",position='dodge')
+# 
+# (TimePlot+PaperTheme+xlab('')
+#  +ylab('Years to Net Benefit')+scale_fill_manual(values=c('green4','deepskyblue3'),name=""))
+>>>>>>> Prepare-Function-Run
 # dev.off()
 
 
