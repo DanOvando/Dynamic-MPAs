@@ -202,7 +202,9 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
         l=l+1
         show(l)
         
-        ObjMat[l,3]<- -FindMPATrajectory(c(Int[i],Flip[o]),Mode='LinearPlus',EvalTime=OptTime,FTemp= FatTarget$par,TimeFrame=OptTime,FleetSpill=FleetSpill,StartPop=StartPop,
+        ObjMat[l,3]<- -FindMPATrajectory(c(Int[i],Flip[o]),Mode='LinearPlus',EvalTime=OptTime,FTemp= FatTarget$par,TimeFrame=OptTime,
+                                         FleetSpill=FleetSpill,FleetDiscount=0.2,
+                                         StartPop=StartPop,
                                          OptSize=OptNTZSize$par,Alpha=1,OptMode='Function',
                                          BaseYields=BaseConditions$Yield,GrowMode='Shrink',Species=Species,lh=lh,BasePatches=BasePatches)
         

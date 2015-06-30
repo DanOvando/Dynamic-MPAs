@@ -714,24 +714,12 @@ Recruits<- function(NofEggs,SSB,DDType,RecDevForm,RecDevValue,Species,lh) #Calcu
     
     if (DDType=='BH')
     {
-      
-      #     RelativePatchSizes<- Patches$PatchSizes/sum(Patches$PatchSizes)
-      
+            
       RelativePatchSizes<- 1
       
       Alpha<- (4* lh$BH.Steepness*RelativePatchSizes*lh$R0)/(5* lh$BH.Steepness-1)
       
       Beta<- (RelativePatchSizes*lh$R0)*(1-lh$BH.Steepness)/(5* lh$BH.Steepness-1)
-      
-      # show(paste('Alpha is ',Alpha))
-      
-      # show(paste('Beta is ',Beta))
-      
-      # Alpha<- (RelativePatchSizes*lh$B0)*((1-lh$BH.Steepness)/(4*lh$BH.Steepness*(RelativePatchSizes*lh$R0)))
-      
-      # Beta<- (5*lh$BH.Steepness-1)/(4*lh$BH.Steepness*(RelativePatchSizes*lh$R0))
-      
-      
       
       if (lh$LarvalChoice==1)
       {
@@ -1086,7 +1074,7 @@ MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime,GrowMode)
   
   return(MPASize)
 }
-FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime,Alpha,GrowMode,Species,lh,BasePatches)
+FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,FleetDiscount,StartPop,OptMode,BaseYields,OptSize,Mode,EvalTime,Alpha,GrowMode,Species,lh,BasePatches)
 {
   
   Yields<- rep(NA,TimeFrame)
@@ -1116,9 +1104,8 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,StartPop,OptMo
     PassPop<- NewPop$FinalNumAtAge
     
   }
-#         NPB<- Discount((Yields)-(BaseYields),Fleet$YieldDiscount,TimeFrame)$NPV  
   
-  NPB<- sum((Yields - BaseYields)*(1+Fleet$YieldDiscount)^-(0:(TimeFrame-1)))
+  NPB<- sum((Yields - BaseYields)*(1+FleetDiscount)^-(0:(TimeFrame-1)))
   
   #     show(Discount((Yields),Fleet$YieldDiscount,TimeFrame)$NPV)
   

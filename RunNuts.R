@@ -5,12 +5,11 @@ library(proftools)
 library(plyr)
 library(grid)
 library(gridExtra)
-library(optimx)
 library(ggplot2)
 library(gridExtra)
 library(plyr)
 library(dplyr)
-library(dfoptim)
+# library(dfoptim)
 library(tidyr)
 library(broom)
 library(parallel)
@@ -36,12 +35,10 @@ DiscRates<- 0.1
 
 BasePatches<- Patches
 
-
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
-BatchFolder<- 'Results/3.1/'
+BatchFolder<- 'Results/3.ARG/'
 
-RunAnalysis<- FALSE
-
+RunAnalysis<- TRUE
 
 if (RunAnalysis==TRUE)
 {
@@ -88,9 +85,16 @@ ReserveResults$YieldBalance<- ReserveResults$Yield-ReserveResults$SQYield
 
 ReserveResults$ScenId<- with(ReserveResults,paste(Species,m,f,sep='-'))
 
-ReserveResults<- ddply(ReserveResults,c('ScenId'),mutate,
-                     PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
-                     NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
+ReserveResults<- ReserveResults %>%
+  group_by(ScenId) %>%
+  mutate( PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
+          NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
+    
+  
+
+# ReserveResults<- ddply(ReserveResults,c('ScenId'),mutate,
+#                      PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
+#                      NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
 
 quartz()
 ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species,scale='free')
@@ -103,14 +107,15 @@ if (RunAnalysis==F)
 }
 
 library(RColorBrewer) 
-
+pdf(file='colorpal.pdf')
 display.brewer.all()
+dev.off()
 
 FontColor<- 'black'
-
+pdf(file='testkeynote.pdf')
 a=(ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=Yield,group=m))+geom_point()+facet_wrap(~Species,scale='free'))
 a + scale_color_gradientn(colours=RColorBrewer::brewer.pal(9,'YlOrRd'))+theme_minimal()
-
+dev.off
 KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
                      axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
                      legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"))
