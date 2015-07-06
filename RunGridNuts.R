@@ -76,6 +76,7 @@ if (RunAnalysis == TRUE) {
   
   RunMatrix <- PrepareGrid(SpeciesList,Fs='Set to 0.25',ReserveInc = 0.25,InterceptInc = 0.25,SlopeInc = 0.25,DiscRates)
   
+  save(file = paste(BatchFolder,'run_matrix.Rdata'),RunMatrix)
   
   #       Rprof(tmp <- tempfile(),line.profiling=T)
   
