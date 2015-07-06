@@ -117,10 +117,7 @@ if (RunAnalysis == TRUE) {
     mutate(NPB=cumsum(PresentBalance),NPY=cumsum(PresentYield),RequestedLoan = sum(PresentBalance[YieldBalance<0]),
            ScaledNPB=NPB/max(NPB,na.rm=T))
   
-#   quartz()
-#   (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
-#     geom_tile(aes(fill=NPB))+facet_wrap(~Species,scales='free')+
-#     scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
+
   
   
   save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
@@ -153,55 +150,63 @@ PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,c
 
 Breaks<- c(min(ReserveResults$YieldBalance),0,max(ReserveResults$YieldBalance))
 
-pdf(file=paste(BatchFolder,'NPB Trajectory.pdf',sep=''))
-NPBPlot<- (ggplot(data=subset(ReserveResults,m=='OptNTZ' | m=='EqNTZ'),aes(x=Year,y=NPB,linetype=m))+geom_line(size=1.2)+
-             geom_point(aes(fill=YieldBalance),size=3,shape=21) + facet_wrap(~Species,scales='free_y')+
-             scale_fill_gradient2(low='red',mid='yellow',high='green',breaks=Breaks)+geom_hline(aes(yintercept=0)))
-print(NPBPlot)
-dev.off()
+# pdf(file=paste(BatchFolder,'Grid Test.pdf',sep=''))
+GridPlot<- (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
+  geom_tile(aes(fill=NPB))+facet_wrap(~Species,scales='free')+
+  scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
 
-# pdf(file=paste(BatchFolder,'Scaled NPB Trajectory.pdf',sep=''))
-# ScaledNPBPlot<- (ggplot(data=subset(ReserveResults,m=='OptNTZ' | m=='EqNTZ'),aes(x=Year,y=ScaledNPB,linetype=m))+geom_line(size=1.2)+
-#              geom_point(aes(fill=YieldBalance),size=3,shape=21)+facet_wrap(~Species,scale='free_y')+
+ggsave(filename=paste(BatchFolder,'Grid Test.pdf',sep=''),plot=GridPlot)
+
+
+# pdf(file=paste(BatchFolder,'NPB Trajectory.pdf',sep=''))
+# NPBPlot<- (ggplot(data=subset(ReserveResults,m=='OptNTZ' | m=='EqNTZ'),aes(x=Year,y=NPB,linetype=m))+geom_line(size=1.2)+
+#              geom_point(aes(fill=YieldBalance),size=3,shape=21) + facet_wrap(~Species,scales='free_y')+
 #              scale_fill_gradient2(low='red',mid='yellow',high='green',breaks=Breaks)+geom_hline(aes(yintercept=0)))
-# print(ScaledNPBPlot)
+# print(NPBPlot)
 # dev.off()
-
-
-ResSummary<- ReserveResults %>%
-  group_by(Species,m,f) %>%
-  summarize(TimeToNPB=which(NPB>=0)[1],
-            NegativeYields=Discount(pmin(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV,
-            StatusQuoYields=Discount(SQYield*(YieldBalance<=0),Fleet$YieldDiscount,length(YieldBalance))$NPV,
-            PriceInc=100*(StatusQuoYields/(StatusQuoYields+NegativeYields)-1),
-            AvailableSurplus=Discount(pmax(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV) %>%
-  ungroup() %>%
-  mutate(RunName=paste(Species,m,f,sep='-'))
-
-
-RunNames<- unique(ResSummary$RunName)
-for (i in seq_len(length(RunNames)))
-{
-  Where<- ResSummary$RunName==RunNames[i]
-  ResSummary$MaxInterestRate[i]<- 100*exp(optim(-4,FindMaxInterestRate,LoanTime=10,LoanAmount=-ResSummary$NegativeYields[Where],Surplus=ResSummary$AvailableSurplus[Where],lower=-10,upper=10,method='Brent')$par)
-}
-
-
-pdf(file=paste(BatchFolder,'Value Gain Needed.pdf',sep=''))
-PriceGainPlot<- (ggplot(ResSummary,aes(x=Species,y=PriceInc,fill=m))+
-                   geom_bar(stat='identity',position='dodge')+KeynoteTheme+theme(legend.title=element_blank()))
-print(PriceGainPlot)
-dev.off()
-
-pdf(file=paste(BatchFolder,'Time to Positive NPB.pdf',sep=''))
-TimeToNPBPlot<- (ggplot(ResSummary,aes(x=Species,y=TimeToNPB,fill=m))+
-                   geom_bar(stat='identity',position='dodge')+KeynoteTheme)
-print(TimeToNPBPlot)
-dev.off()
-
-pdf(file= paste(BatchFolder,'Max Interest Rate.pdf',sep= ''))
-MaxInterestRatePlot<- (ggplot(ResSummary,aes(x= Species,y=MaxInterestRate,fill=m))+
-                         geom_bar(stat='identity',position='dodge')+KeynoteTheme)
-print(MaxInterestRatePlot)
-dev.off()
+# 
+# # pdf(file=paste(BatchFolder,'Scaled NPB Trajectory.pdf',sep=''))
+# # ScaledNPBPlot<- (ggplot(data=subset(ReserveResults,m=='OptNTZ' | m=='EqNTZ'),aes(x=Year,y=ScaledNPB,linetype=m))+geom_line(size=1.2)+
+# #              geom_point(aes(fill=YieldBalance),size=3,shape=21)+facet_wrap(~Species,scale='free_y')+
+# #              scale_fill_gradient2(low='red',mid='yellow',high='green',breaks=Breaks)+geom_hline(aes(yintercept=0)))
+# # print(ScaledNPBPlot)
+# # dev.off()
+# 
+# 
+# ResSummary<- ReserveResults %>%
+#   group_by(Species,m,f) %>%
+#   summarize(TimeToNPB=which(NPB>=0)[1],
+#             NegativeYields=Discount(pmin(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV,
+#             StatusQuoYields=Discount(SQYield*(YieldBalance<=0),Fleet$YieldDiscount,length(YieldBalance))$NPV,
+#             PriceInc=100*(StatusQuoYields/(StatusQuoYields+NegativeYields)-1),
+#             AvailableSurplus=Discount(pmax(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV) %>%
+#   ungroup() %>%
+#   mutate(RunName=paste(Species,m,f,sep='-'))
+# 
+# 
+# RunNames<- unique(ResSummary$RunName)
+# for (i in seq_len(length(RunNames)))
+# {
+#   Where<- ResSummary$RunName==RunNames[i]
+#   ResSummary$MaxInterestRate[i]<- 100*exp(optim(-4,FindMaxInterestRate,LoanTime=10,LoanAmount=-ResSummary$NegativeYields[Where],Surplus=ResSummary$AvailableSurplus[Where],lower=-10,upper=10,method='Brent')$par)
+# }
+# 
+# 
+# pdf(file=paste(BatchFolder,'Value Gain Needed.pdf',sep=''))
+# PriceGainPlot<- (ggplot(ResSummary,aes(x=Species,y=PriceInc,fill=m))+
+#                    geom_bar(stat='identity',position='dodge')+KeynoteTheme+theme(legend.title=element_blank()))
+# print(PriceGainPlot)
+# dev.off()
+# 
+# pdf(file=paste(BatchFolder,'Time to Positive NPB.pdf',sep=''))
+# TimeToNPBPlot<- (ggplot(ResSummary,aes(x=Species,y=TimeToNPB,fill=m))+
+#                    geom_bar(stat='identity',position='dodge')+KeynoteTheme)
+# print(TimeToNPBPlot)
+# dev.off()
+# 
+# pdf(file= paste(BatchFolder,'Max Interest Rate.pdf',sep= ''))
+# MaxInterestRatePlot<- (ggplot(ResSummary,aes(x= Species,y=MaxInterestRate,fill=m))+
+#                          geom_bar(stat='identity',position='dodge')+KeynoteTheme)
+# print(MaxInterestRatePlot)
+# dev.off()
 
