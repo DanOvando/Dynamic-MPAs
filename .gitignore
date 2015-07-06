@@ -4,8 +4,8 @@
 **/*.pdf
 **/*.xlsx
 **/*.docx
-**/*.rdata
-**/*.RData
+#**/*.rdata
+#**/*.RData
 **/*.key
 **/*.jpg
 
