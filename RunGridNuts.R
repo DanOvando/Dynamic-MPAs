@@ -88,8 +88,9 @@ if (RunAnalysis == TRUE) {
     
     sfInit( parallel=TRUE, cpus=NumCores)
     
-    sfExport("RunMatrix","BasePatches","Populations","BatchFolder","TimeToRun",local=FALSE)
+#     sfExport("RunMatrix","BasePatches","Populations","BatchFolder","TimeToRun",local=FALSE)
     
+    sfExportAll()
     sfLibrary(dplyr)
     
     ReserveResults <- sfClusterApplyLB(1:dim(RunMatrix)[1], RunGridReserve,RunMatrix=RunMatrix,BasePatches = BasePatches,
