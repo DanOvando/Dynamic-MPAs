@@ -22,7 +22,7 @@ sapply(list.files(pattern = "[.]R$", path = "Functions", full.names = TRUE), sou
 source('BetterNutzControlfile.R')
 
 PopTolerance <- .1 #the cutoff for identifying point where population stops changing
-NumCores<- 2
+NumCores<- 8
 InitialPopulation <- 1000 #Seed for initial population 
 CollapseThreshold <- 0.1
 LookAtLengths <- 0
@@ -82,8 +82,7 @@ if (RunAnalysis == TRUE) {
   
   #   dim(RunMatrix)[1]
   if (file.exists('NutsProgress.txt')) {file.remove('NutsProgress.txt') }
-  browser()
-  
+
   if (Sys.info()[1]=='Windows')
   {
     
@@ -105,8 +104,8 @@ if (RunAnalysis == TRUE) {
   }
   
   save(file = paste(BatchFolder,'Reserve Results.Rdata'),ReserveResults)
-  browser()
-  ReserveResults$YieldBalance <- ReserveResults$Yield - ReserveResults$SQYield
+
+    ReserveResults$YieldBalance <- ReserveResults$Yield - ReserveResults$SQYield
   
   #   ReserveResults$ScenId <- with(ReserveResults,paste(Species,m,f,sep = '- '))
   
@@ -117,10 +116,10 @@ if (RunAnalysis == TRUE) {
     mutate(NPB=cumsum(PresentBalance),NPY=cumsum(PresentYield),RequestedLoan = sum(PresentBalance[YieldBalance<0]),
            ScaledNPB=NPB/max(NPB,na.rm=T))
   
-  quartz()
-  (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
-    geom_tile(aes(fill=NPB))+facet_wrap(~Species,scales='free')+
-    scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
+#   quartz()
+#   (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
+#     geom_tile(aes(fill=NPB))+facet_wrap(~Species,scales='free')+
+#     scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
   
   
   save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
