@@ -2,7 +2,6 @@
 .Rhistory
 .RData
 **/*.pdf
-**/*.csv
 **/*.xlsx
 **/*.docx
 **/*.rdata
