@@ -10,5 +10,4 @@
 **/*.key
 **/*.jpg
 
-
-
+packrat/lib*/

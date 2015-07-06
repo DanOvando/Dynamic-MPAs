@@ -9,8 +9,8 @@ RunReserve<- function(r,RunMatrix,BasePatches,DefaultLifeHistory)
   {
     eval(parse(text=paste(colnames(Run)[d],'<- I(Run[d])',sep='')))
   }
-  
-  StoreRun<- paste(BatchFolder,Species,sep='') #1 if you want to create a seeded folder to store results, 0 if you want it in the generic working folder
+
+    StoreRun<- paste(BatchFolder,Species,sep='') #1 if you want to create a seeded folder to store results, 0 if you want it in the generic working folder
   
   if (StoreRun==1)
   {

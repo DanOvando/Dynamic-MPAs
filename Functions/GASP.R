@@ -311,8 +311,13 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     FlatFishingYields$MPA[FlatFishingYields$Patch %in% PatchNumbers[Patches$MPALocations==1]]<- 'MPA'
     
-    FlatFishingYields<- ddply(FlatFishingYields,c('Year','MPA'),summarize,Yields=sum(Yield))
+    FlatFishingYields<- FlatFishingYields %>%
+      group_by(Year,MPA) %>%
+      summarize(Yields=sum(Yield,na.rm=T))
+
+#     FlatFishingYields<- ddply(FlatFishingYields,c('Year','MPA'),summarize,Yields=sum(Yield))
     
+        
 #     print(xyplot(Yields ~Year  | MPA,data=FlatFishingYields,type='l',lwd=4))
 #     dev.off()
     
@@ -336,7 +341,12 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     FlatBiomass$MPA[FlatBiomass$Patch %in% PatchNumbers[Patches$MPALocations==1]]<- 'MPA'
     
-    FlatBiomass<- ddply(FlatBiomass,c('Year','MPA'),summarize,Biomass=sum(Biomass))
+    FlatBiomass<- FlatBiomass %>%
+      group_by(Year,MPA) %>%
+      rename(TempBiomass=Biomass) %>%
+      summarise(Biomass=sum(TempBiomass))
+
+#     FlatBiomass<- ddply(FlatBiomass,c('Year','MPA'),summarize,Biomass=sum(Biomass))
     
 #     print(xyplot(Biomass ~ Year | MPA,data=FlatBiomass,type='l',lwd=4))
 #     
@@ -1046,7 +1056,7 @@ LoanPayment<- function(principle,rate,nyears,ppyear)
 #   return(MPASize)
 # }
 
-MPAFunction<- function(OptVector,t,OptSize,Mode,EvalTime,GrowMode)
+MPAFunction<- function(OptVector,t,OptSize,Mode='Nothing',EvalTime,GrowMode='Dumb')
 {
   
   

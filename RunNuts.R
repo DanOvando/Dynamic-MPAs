@@ -1,18 +1,17 @@
 rm(list=ls())
-library(lattice)
 require(stats)
 library(proftools)
-library(plyr)
 library(grid)
 library(gridExtra)
 library(ggplot2)
-library(gridExtra)
 library(plyr)
 library(dplyr)
-# library(dfoptim)
 library(tidyr)
 library(broom)
-library(parallel)
+library(RColorBrewer) 
+
+sapply(list.files(pattern = "[.]R$", path = "Functions", full.names = TRUE), source)
+
 
 ####### Shrinking MPAs #########
 #Ovando, Dougherty, Wilson et al 
@@ -25,7 +24,7 @@ InitialPopulation<- 1000 #Seed for initial population
 CollapseThreshold<- 0.1
 LookAtLengths<- 0
 ReservePosition<- 'Center'
-OptTime<- 50 #Time Horizon to optimize over
+OptTime<- 10 #Time Horizon to optimize over
 Alpha<- 0.5
 
 
@@ -36,93 +35,164 @@ DiscRates<- 0.1
 BasePatches<- Patches
 
 # setwd('/Users/danovando/Dropbox/Shrinking NTZ')
-BatchFolder<- 'Results/3.ARG/'
+BatchFolder<- 'Results/uhhhhh/'
 
 RunAnalysis<- TRUE
 
 if (RunAnalysis==TRUE)
 {
-
-DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
-
-LongDataNames<- c('Species','Movement','Steepness','MPAScenario','FishingScenario','FvFmsy','OptNTZ','NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
-
-dir.create(paste(BatchFolder,sep=''))
-
-MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
-
-LifeHistories<- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors=F)
-
-LifeColumns<- colnames(LifeHistories)
-
-LifeVars<- c('Range','MaxAge','m','k','Linf','t0','AgeMa50','LengthMa50','MaturityMode','BH.Steepness','wa','wb','WeightForm','fa','fb','DDForm')
-
-SpeciesList<- LifeHistories$CommName
-
-SystemBmsyStorage<- as.data.frame(matrix(NA,nrow=length(SpeciesList),ncol=2))
-
-colnames(SystemBmsyStorage)<- c('Species','Bmsy')
-
-SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
-
-# SpeciesList<- SpeciesList[1]
-
-NumFs<- 1
-
-
-source('RunReserve.R')
-source('PrepareRuns.R')
-DefaultLifeHistory<- lh
-
-RunMatrix<- PrepareRuns(SpeciesList,0.25,MPANames,DiscRates)
-
-BasePatches<- Patches
-
-ReserveResults=(lapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
-         DefaultLifeHistory=DefaultLifeHistory)) %>% ldply()
-
-ReserveResults$YieldBalance<- ReserveResults$Yield-ReserveResults$SQYield
-
-ReserveResults$ScenId<- with(ReserveResults,paste(Species,m,f,sep='-'))
-
-ReserveResults<- ReserveResults %>%
-  group_by(ScenId) %>%
-  mutate( PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
-          NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
-    
   
-
-# ReserveResults<- ddply(ReserveResults,c('ScenId'),mutate,
-#                      PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1),
-#                      NPY=cumsum(PresentYield),NPB=cumsum(PresentBalance),RequestedLoan = sum(PresentBalance[YieldBalance<0]))
-
-quartz()
-ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species,scale='free')
-
-save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
+  DataNames<- c('NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
+  
+  LongDataNames<- c('Species','Movement','Steepness','MPAScenario','FishingScenario','FvFmsy','OptNTZ','NPV of Yield','NPV of Biomass','Mean Yield','Mean Biomass','Mean Numbers','Yield Instability','Mean Changes in Yield','Percent Years with Profit Gains','Percent Years with Numbers Gains','Mean Percent Change in Yield','Mean Percent Change in Numbers','Percent Years With Numbers and Yield Gains','FiveyearYieldBalance','FiveyearBiomassBalance','FiveyearNPVBalance','TenyearYieldBalance','TenyearBiomassBalance','TenyearNPVBalance','YearsToYieldRecovery','YearsToBioRecovery','YearsToBalanceRecovery','TenYearNPSurplus','RequestedLoan','MaxInterestRate')
+  
+  dir.create(paste(BatchFolder,sep=''))
+  
+  MPANames<- c('EqNTZ','SNTZ','GNTZ','OptNTZ','CatchShareEqNTZ')
+  
+  LifeHistories<- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors=F)
+  
+  LifeColumns<- colnames(LifeHistories)
+  
+  LifeVars<- c('Range','MaxAge','m','k','Linf','t0','AgeMa50','LengthMa50','MaturityMode','BH.Steepness','wa','wb','WeightForm','fa','fb','DDForm')
+  
+  SpeciesList<- LifeHistories$CommName
+  
+  SystemBmsyStorage<- as.data.frame(matrix(NA,nrow=length(SpeciesList),ncol=2))
+  
+  colnames(SystemBmsyStorage)<- c('Species','Bmsy')
+  
+  SystemBmsyStorage$Species<- as.character(SystemBmsyStorage$Species)
+  
+  # SpeciesList<- SpeciesList[1]
+  
+  NumFs<- 1
+  
+  
+#   source('RunReserve.R')
+#   source('PrepareRuns.R')
+  DefaultLifeHistory<- lh
+  
+  RunMatrix<- PrepareRuns(SpeciesList,0.25,MPANames,DiscRates)
+  
+  BasePatches<- Patches
+  
+  ReserveResults=(lapply(1:dim(RunMatrix)[1],RunReserve,RunMatrix=RunMatrix,BasePatches=BasePatches,
+                         DefaultLifeHistory=DefaultLifeHistory)) %>% ldply()
+  
+  save(file=paste(BatchFolder,'Reserve Results.Rdata'),ReserveResults)
+  
+  ReserveResults$YieldBalance<- ReserveResults$Yield-ReserveResults$SQYield
+  
+  ReserveResults$ScenId<- with(ReserveResults,paste(Species,m,f,sep='-'))
+  
+  ReserveResults<- ReserveResults %>%
+    group_by(ScenId) %>% 
+    arrange(Year) %>%
+    mutate(PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1)) %>%
+    mutate(NPB=cumsum(PresentBalance),NPY=cumsum(PresentYield),RequestedLoan = sum(PresentBalance[YieldBalance<0]),
+           ScaledNPB=NPB/max(NPB,na.rm=T))
+  
+#   quartz()
+#   ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=m))+geom_line()+facet_wrap(~Species,scale='free')
+#   
+#   ggplot(data=ReserveResults,aes(x=Year,y=YieldBalance,color=m))+geom_line()+facet_wrap(~Species,scales = 'free')
+#   
+  
+  save.image(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
 }
 if (RunAnalysis==F)
 {
   load(file=paste(BatchFolder,'NutsResults.Rdata',sep=''))
 }
 
-library(RColorBrewer) 
-pdf(file='colorpal.pdf')
-display.brewer.all()
-dev.off()
+
+# pdf(file='colorpal.pdf')
+# display.brewer.all()
+# dev.off()
 
 FontColor<- 'black'
-pdf(file='testkeynote.pdf')
-a=(ggplot(data=ReserveResults,aes(x=Year,y=NPB,color=Yield,group=m))+geom_point()+facet_wrap(~Species,scale='free'))
-a + scale_color_gradientn(colours=RColorBrewer::brewer.pal(9,'YlOrRd'))+theme_minimal()
-dev.off
+
+
 KeynoteTheme<- theme(legend.position='top',plot.background=element_rect(color=NA),rect=element_rect(fill='transparent',color=NA),text=element_text(size=22,family=Font,color=FontColor),
-                     axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
-                     legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'),legend.background=element_rect(fill="gray90"))
+                     axis.text=element_text(color=FontColor),axis.title.y=element_text(size=12,hjust=0.5,angle=0),axis.text.y=element_text(size=12),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=12),
+                     legend.text=element_text(size=10,color='black'),legend.background=element_rect(fill="gray90"),legend.title=element_blank())
 
 PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,color=FontColor),
                    axis.text=element_text(color=FontColor),axis.title.y=element_text(size=25,hjust=0.5,angle=0),axis.text.y=element_text(size=30),axis.text.x=element_text(angle=35, vjust=0.9,hjust=0.9,color=FontColor,size=22),
                    legend.text=element_text(size=14,color='black'),legend.title=element_text(size=16,color='black'))
+
+
+Breaks<- c(min(ReserveResults$YieldBalance),0,max(ReserveResults$YieldBalance))
+
+pdf(file=paste(BatchFolder,'NPB Trajectory.pdf',sep=''))
+NPBPlot<- (ggplot(data=subset(ReserveResults,m=='OptNTZ' | m=='EqNTZ'),aes(x=Year,y=NPB,linetype=m))+geom_line(size=1.2)+
+             geom_point(aes(fill=YieldBalance),size=3,shape=21)+facet_wrap(~Species,scale='free_y')+
+             scale_fill_gradient2(low='red',mid='yellow',high='green',breaks=Breaks)+geom_hline(aes(yintercept=0)))
+print(NPBPlot)
+dev.off()
+
+# pdf(file=paste(BatchFolder,'Scaled NPB Trajectory.pdf',sep=''))
+# ScaledNPBPlot<- (ggplot(data=subset(ReserveResults,m=='OptNTZ' | m=='EqNTZ'),aes(x=Year,y=ScaledNPB,linetype=m))+geom_line(size=1.2)+
+#              geom_point(aes(fill=YieldBalance),size=3,shape=21)+facet_wrap(~Species,scale='free_y')+
+#              scale_fill_gradient2(low='red',mid='yellow',high='green',breaks=Breaks)+geom_hline(aes(yintercept=0)))
+# print(ScaledNPBPlot)
+# dev.off()
+
+
+
+ResSummary<- ReserveResults %>%
+  group_by(Species,m,f) %>%
+  summarize(TimeToNPB=which(NPB>=0)[1],
+            NegativeYields=Discount(pmin(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV,
+            StatusQuoYields=Discount(SQYield*(YieldBalance<=0),Fleet$YieldDiscount,length(YieldBalance))$NPV,
+            PriceInc=100*(StatusQuoYields/(StatusQuoYields+NegativeYields)-1),
+            AvailableSurplus=Discount(pmax(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV) %>%
+  ungroup() %>%
+  mutate(RunName=paste(Species,m,f,sep='-'))
+
+
+RunNames<- unique(ResSummary$RunName)
+for (i in seq_len(length(RunNames)))
+{
+  Where<- ResSummary$RunName==RunNames[i]
+  ResSummary$MaxInterestRate[i]<- 100*exp(optim(-4,FindMaxInterestRate,LoanTime=10,LoanAmount=-ResSummary$NegativeYields[Where],Surplus=ResSummary$AvailableSurplus[Where],lower=-10,upper=10,method='Brent')$par)
+}
+
+
+pdf(file=paste(BatchFolder,'Value Gain Needed.pdf',sep=''))
+PriceGainPlot<- (ggplot(ResSummary,aes(x=Species,y=PriceInc,fill=m))+
+  geom_bar(stat='identity',position='dodge')+KeynoteTheme+theme(legend.title=element_blank()))
+print(PriceGainPlot)
+dev.off()
+
+pdf(file=paste(BatchFolder,'Time to Positive NPB.pdf',sep=''))
+TimeToNPBPlot<- (ggplot(ResSummary,aes(x=Species,y=TimeToNPB,fill=m))+
+  geom_bar(stat='identity',position='dodge')+KeynoteTheme)
+print(TimeToNPBPlot)
+dev.off()
+
+pdf(file=paste(BatchFolder,'Max Interest Rate.pdf',sep=''))
+MaxInterestRatePlot<- (ggplot(ResSummary,aes(x=Species,y=MaxInterestRate,fill=m))+
+                   geom_bar(stat='identity',position='dodge')+KeynoteTheme)
+print(MaxInterestRatePlot)
+dev.off()
+
+
+
+# a=subset(ReserveResults,Species=='Blacknose Shark' & m=='CatchShareEqNTZ')
+#   
+#         NegativeYields<-  Discount(pmin(0,a$YieldBalance),Fleet$YieldDiscount,11)$NPV
+#         
+#         StatusQuoYields<-  Discount(a$SQYield*(a$YieldBalance<=0),Fleet$YieldDiscount,11)$NPV
+#         
+#         PriceIncreaseNeeded<- 100*(StatusQuoYields/(StatusQuoYields+NegativeYields)-1) # %increase in prices needed to match status quo profits
+#         
+  
+  
+  
+
+
 
 
 

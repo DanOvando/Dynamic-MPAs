@@ -22,7 +22,7 @@ Alpha<- 0.5
 # source(paste(InputFolder,Species,'LifeHistory.R',sep='')) #load in population parameters
 source(paste(InputFolder,'GenericLifeHistory.R',sep='')) #load in population parameters
 
-source('GASP.R') #source GASP functions
+# source('GASP.R') #source GASP functions
 lh$Bmsy<- -999
 lh$SSB0<- NA
 # LengthAtAge<- Length(1:lh$MaxAge) #Calculate length at age vector
