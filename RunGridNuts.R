@@ -21,7 +21,7 @@ sapply(list.files(pattern = "[.]R$", path = "Functions", full.names = TRUE), sou
 
 source('BetterNutzControlfile.R')
 
-PopTolerance <- .1 #the cutoff for identifying point where population stops changing
+PopTolerance <- 10 #the cutoff for identifying point where population stops changing
 NumCores<- 8
 InitialPopulation <- 1000 #Seed for initial population 
 CollapseThreshold <- 0.1
@@ -57,7 +57,7 @@ if (RunAnalysis == TRUE) {
   
   SpeciesList <- LifeHistories$CommName
   
-    SpeciesList<- SpeciesList[1:2]
+#     SpeciesList<- SpeciesList[1:2]
   
   SystemBmsyStorage <- as.data.frame(matrix(NA,nrow=length(SpeciesList),ncol=2))
   
@@ -82,7 +82,7 @@ if (RunAnalysis == TRUE) {
 #       summaryRprof(tmp)
 #       unlink(tmp)
   
-  RunMatrix <- PrepareGrid(SpeciesList,Fs='Set to 0.25',ReserveInc = 0.25,InterceptInc = 0.25,SlopeInc = 0.25,DiscRates)
+  RunMatrix <- PrepareGrid(SpeciesList,Fs='Set to 0.25',ReserveInc = 0.1,InterceptInc = 0.1,SlopeInc = 0.1,DiscRates)
   
   save(file = paste(BatchFolder,'run_matrix.Rdata'),RunMatrix)
   
