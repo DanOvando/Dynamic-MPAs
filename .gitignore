@@ -8,5 +8,6 @@
 #**/*.RData
 **/*.key
 **/*.jpg
+**/*.txt
 
 packrat/lib*/

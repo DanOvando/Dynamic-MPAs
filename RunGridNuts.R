@@ -12,7 +12,7 @@ library(dplyr)
 library(tidyr)
 library(broom)
 library(RColorBrewer) 
-# library(parallel)
+library(parallel)
 library(snowfall)
 
 sapply(list.files(pattern = "[.]R$", path = "Functions", full.names = TRUE), source)
@@ -37,7 +37,7 @@ DiscRates <- 0.1
 
 BasePatches <- Patches
 
-BatchFolder <- 'Results/Full Grid/'
+BatchFolder <- 'Results/Scratch/'
 
 RunAnalysis <- TRUE
 
@@ -57,7 +57,7 @@ if (RunAnalysis == TRUE) {
   
   SpeciesList <- LifeHistories$CommName
   
-  #   SpeciesList<- SpeciesList[1:2]
+    SpeciesList<- SpeciesList[1:2]
   
   SystemBmsyStorage <- as.data.frame(matrix(NA,nrow=length(SpeciesList),ncol=2))
   
@@ -71,8 +71,16 @@ if (RunAnalysis == TRUE) {
   
   BasePatches <- Patches
   
+  
   Populations<- sapply(gsub(' ','',SpeciesList,fixed = T),TargetPop=0.25,PreparePopulations,LifeHistories=LifeHistories,BaseLife=lh,LifeVars = LifeVars,BasePatches = BasePatches,BatchFolder = BatchFolder,USE.NAMES = T)
   
+#   Rprof(tmp <- tempfile(),line.profiling=T)
+#   
+#   BatTargetPopulation<- GrowPopulation(100, 0,'EQ',0,'BatTarget Run',Species='Yellowtail Snapper',lh=Populations$YellowtailSnapper,Patches=Patches,FigureFolder=FigureFolder)
+#   
+#       Rprof() 
+#       summaryRprof(tmp)
+#       unlink(tmp)
   
   RunMatrix <- PrepareGrid(SpeciesList,Fs='Set to 0.25',ReserveInc = 0.25,InterceptInc = 0.25,SlopeInc = 0.25,DiscRates)
   
@@ -100,8 +108,14 @@ if (RunAnalysis == TRUE) {
   
   if (Sys.info()[1]!='Windows')
   {
+      Rprof(tmp <- tempfile(),line.profiling=T)
+    
     ReserveResults <- (mclapply(1:dim(RunMatrix)[1], RunGridReserve, RunMatrix = RunMatrix,BasePatches = BasePatches,
                                 Populations = Populations, BatchFolder = BatchFolder,TimeToRun=TimeToRun, mc.cores = NumCores )) %>% ldply()
+          Rprof() 
+          summaryRprof(tmp)
+          unlink(tmp)
+    
   }
   
   save(file = paste(BatchFolder,'Reserve Results.Rdata'),ReserveResults)
