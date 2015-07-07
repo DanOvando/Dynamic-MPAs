@@ -39,7 +39,7 @@ BasePatches <- Patches
 
 BatchFolder <- 'Results/Full Grid/'
 
-RunAnalysis <- TRUE
+RunAnalysis <- FALSE
 
 
 # Run Analysis ---------------------------------------------------------------
@@ -164,12 +164,62 @@ PaperTheme<- theme(legend.position='top',text=element_text(size=22,family=Font,c
 
 Breaks<- c(min(ReserveResults$YieldBalance),0,max(ReserveResults$YieldBalance))
 
-# pdf(file=paste(BatchFolder,'Grid Test.pdf',sep=''))
-GridPlot<- (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
-  geom_tile(aes(fill=NPB))+facet_wrap(~Species,scales='free')+
-  scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
 
-ggsave(filename=paste(BatchFolder,'Grid Test.pdf',sep=''),plot=GridPlot)
+
+ReserveResults <- ReserveResults %>%
+  group_by(Run) %>% 
+  arrange(Year) %>%
+  mutate(s_Yield=Yield/max(Yield,na.rm=T),s_PresentYield=s_Yield*(1+Fleet$YieldDisc)^-(Year-1),s_PresentBalance=(Yield/SQYield)*(1+Fleet$YieldDisc)^-(Year-1)) %>%
+  mutate(s_NPY=cumsum(s_PresentYield),s_NPB=cumsum(s_PresentBalance))
+
+
+# ResSummary<- ReserveResults %>%
+#   group_by(Species,m,f) %>%
+#   summarize(TimeToNPB=which(NPB>=0)[1],
+#             NegativeYields=Discount(pmin(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV,
+#             StatusQuoYields=Discount(SQYield*(YieldBalance<=0),Fleet$YieldDiscount,length(YieldBalance))$NPV,
+#             PriceInc=100*(StatusQuoYields/(StatusQuoYields+NegativeYields)-1),
+#             AvailableSurplus=Discount(pmax(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV) %>%
+#   ungroup() %>%
+#   mutate(RunName=paste(Species,m,f,sep='-'))
+# 
+# 
+# RunNames<- unique(ResSummary$RunName)
+# for (i in seq_len(length(RunNames)))
+# {
+#   Where<- ResSummary$RunName==RunNames[i]
+#   ResSummary$MaxInterestRate[i]<- 100*exp(optim(-4,FindMaxInterestRate,LoanTime=10,LoanAmount=-ResSummary$NegativeYields[Where],Surplus=ResSummary$AvailableSurplus[Where],lower=-10,upper=10,method='Brent')$par)
+# }
+# 
+
+
+pdf(file=paste(BatchFolder,'Final Yield Surface.pdf',sep=''))
+GridPlot<- (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
+  geom_raster(aes(fill=s_Yield),interpolate = T)+facet_wrap(~Species,scales='free')+
+  scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
+print(GridPlot)
+dev.off()
+
+pdf(file=paste(BatchFolder,'NPY Surface.pdf',sep=''))
+GridPlot<- (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
+              geom_raster(aes(fill=s_NPY),interpolate = T)+facet_wrap(~Species,scales='free')+
+              scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
+print(GridPlot)
+dev.off()
+
+pdf(file=paste(BatchFolder,'NPB Surface.pdf',sep=''))
+GridPlot<- (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
+              geom_raster(aes(fill=s_NPB),interpolate = T)+facet_wrap(~Species,scales='free')+
+              scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
+print(GridPlot)
+dev.off()
+
+pdf(file=paste(BatchFolder,'Final PB Surface.pdf',sep=''))
+GridPlot<- (ggplot(subset(ReserveResults,Year==max(Year)),aes(Intercept,FinalReserve))+
+              geom_raster(aes(fill=s_PresentBalance),interpolate = T)+facet_wrap(~Species,scales='free')+
+              scale_fill_gradientn(colours=RColorBrewer::brewer.pal(name='RdYlGn',n=9)))
+print(GridPlot)
+dev.off()
 
 
 # pdf(file=paste(BatchFolder,'NPB Trajectory.pdf',sep=''))
