@@ -21,13 +21,13 @@ sapply(list.files(pattern = "[.]R$", path = "Functions", full.names = TRUE), sou
 
 source('BetterNutzControlfile.R')
 
-PopTolerance <- 10 #the cutoff for identifying point where population stops changing
+PopTolerance <- 1 #the cutoff for identifying point where population stops changing
 NumCores<- 8
 InitialPopulation <- 1000 #Seed for initial population 
 CollapseThreshold <- 0.1
 LookAtLengths <- 0
 ReservePosition <- 'Center'
-OptTime <- 10 #Time Horizon to optimize over
+OptTime <- 30 #Time Horizon to optimize over
 Alpha <- 0.5
 
 
@@ -37,7 +37,7 @@ DiscRates <- 0.1
 
 BasePatches <- Patches
 
-BatchFolder <- 'Results/Scratch/'
+BatchFolder <- 'Results/Full Grid/'
 
 RunAnalysis <- TRUE
 
@@ -82,7 +82,7 @@ if (RunAnalysis == TRUE) {
 #       summaryRprof(tmp)
 #       unlink(tmp)
   
-  RunMatrix <- PrepareGrid(SpeciesList,Fs='Set to 0.25',ReserveInc = 0.1,InterceptInc = 0.1,SlopeInc = 0.1,DiscRates)
+  RunMatrix <- PrepareGrid(SpeciesList,Fs='Set to 0.25',ReserveInc = 0.05,InterceptInc = 0.1,SlopeInc = 0.1,DiscRates)
   
   save(file = paste(BatchFolder,'run_matrix.Rdata'),RunMatrix)
   
