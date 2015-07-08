@@ -69,9 +69,13 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
   for (y in 1:TimeToRun)
   {
     
-#     CurrentMPA<- MPA[y]
 
     CurrentMPA<- MPAFunction(MPAParams,y,Run$ReserveSize,EvalTime=TimeToRun)
+    
+    if (y==1)
+    {
+      CurrentMPA<- 0
+    }
 #     
 #     if (y>length(MPA))
 #     {
