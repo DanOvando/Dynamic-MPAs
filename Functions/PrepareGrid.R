@@ -1,11 +1,11 @@
 
 PrepareGrid<- function(Species,Fs,ReserveInc,InterceptInc,SlopeInc,Discs)
 {
-  ReserveSeq<- seq(from=ReserveInc,to=0.6,by=ReserveInc)
+  ReserveSeq<- seq(from=ReserveInc,to=0.5,by=ReserveInc)
   
   InterceptSeq<- seq(from=0,to=1,by=InterceptInc)
   
-  SlopeSeq<- seq(from=0,to=1,by=SlopeInc)
+  SlopeSeq<- seq(from=0,to=0.5,by=SlopeInc)
   
   RunMat<- as.data.frame(matrix(NA,nrow= length(Species)*length(Fs)*length(ReserveSeq)*length(InterceptSeq)*length(SlopeSeq)*length(Discs),ncol=6))
   
