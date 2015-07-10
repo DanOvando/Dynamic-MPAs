@@ -9,5 +9,6 @@
 **/*.key
 **/*.jpg
 **/*.txt
+**/*.Rproj
 
 packrat/lib*/

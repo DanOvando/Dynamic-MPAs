@@ -3,12 +3,12 @@ title: "Solutions for the Short-Term Economic Impacts of Marine Reserves"
 author: "Dan Ovando, Dawn Dougherty, Jono Wilson"
 date: "July 9, 2015"
 output:
-  pdf_document:
+  html_document:
+    fig_align: center
     fig_caption: yes
     fig_height: 6
     fig_width: 8
-  html_document:
-    fig_align: center
+  pdf_document:
     fig_caption: yes
     fig_height: 6
     fig_width: 8
