@@ -3,16 +3,16 @@ title: "Solutions for the Short-Term Economic Impacts of Marine Reserves"
 author: "Dan Ovando, Dawn Dougherty, Jono Wilson"
 date: "July 9, 2015"
 output:
-  word_document:
-    fig_caption: yes
-    fig_height: 6
-    fig_width: 8
   pdf_document:
     fig_caption: yes
     fig_height: 6
     fig_width: 8
   html_document:
     fig_align: center
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 8
+  word_document:
     fig_caption: yes
     fig_height: 6
     fig_width: 8
@@ -26,8 +26,9 @@ toc: yes
 knitr::opts_chunk$set(fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE)
 ```
 ```{r}
-
-ModelRun <- 'Full Grid 2.0'
+library(gridExtra)
+library(ggplot2)
+ModelRun <- 'Full Grid 2.1'
 
 load(paste('Results/',ModelRun,'/NutsPlots.Rdata',sep = ''))
 
@@ -129,7 +130,7 @@ Where *O~a* is the amount of yield lost relative to the status quo. Under the lo
 
 (15) $S_{s} = -\sum^{T}_{t=0} max(0,\frac{Y_{s,t}-Y_{q}}{(1+r)^{t}})$
  
- Where *S~s~* is the total surplus in yields experienced by the fishery for a given scenario *s* over what the fishery would have experienced under the status quo. We then use the *optim* package in *R* [@RCoreTeam2015] to estimate the highest interest rate (%) that the community could afford in order to pay back a 10-year loan of magnitude *O_s~* using surplus *S~s~*. The higher the maximum potential interest rate, the more viable the loan is. 
+ Where *S~s~* is the total surplus in yields experienced by the fishery for a given scenario *s* over what the fishery would have experienced under the status quo. We then use the *optim* package in *R* [@RCoreTeam2015] to estimate the highest interest rate (%) that the community could afford in order to pay back a 10-year loan of magnitude *O~s~* using surplus *S~s~*. The higher the maximum potential interest rate, the more viable the loan is. 
  
 For the value increase scenario, we implicitly assume a status quo value of $1 per unit weight (though this is an arbitraty choice that does not in fact matter). We then ask by what percent the value of the catch caught under a given scenario *s* would have to increase in order to completely offset *O~s~*. This is calculated as
 
@@ -167,9 +168,6 @@ MPAs are commonly used as a tool for multi-species management, especially in the
 species_comp_plot
 ```
 
-```{r, fig.cap= 'Comparison of NPB performance for each species using the other species optimal reserve (outliers out)'}
-species_compnoshark_plot
-```
 
 Rather than comparing the performance of individually optimized runs, we can also ask how the economic impacts of reserves evolve when a common reserve strategy is implemented across all species. We selected the reserve strategy (the unique combination of terminal size, intercept, and slope) that maximized the net utility across all six species. 
 
@@ -241,6 +239,18 @@ Lastly, we see that the intercept does change the percent price increase require
 priceinc_surface_plot
 ```
 
+
+```{r, fig.cap= ' Multi Species Optimal Trajectory', fig.show='hold'}
+msopt_npb_plot
+```
+
+```{r, fig.cap= ' Multi Species Summary', fig.show='hold'}
+grid.arrange(MultiSpecies_StaticPlots_plot)
+```
+
+```{r, fig.cap= ' Multi Species Surface Summary', fig.show='hold'}
+grid.arrange(MultiSpecies_surface_plot)
+```
 
 # Discussion
 
