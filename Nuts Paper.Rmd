@@ -3,8 +3,7 @@ title: "Solutions for the Short-Term Economic Impacts of Marine Reserves"
 author: "Dan Ovando, Dawn Dougherty, Jono Wilson"
 date: "July 9, 2015"
 output:
-  html_document:
-    fig_align: center
+  word_document:
     fig_caption: yes
     fig_height: 6
     fig_width: 8
@@ -12,7 +11,8 @@ output:
     fig_caption: yes
     fig_height: 6
     fig_width: 8
-  word_document:
+  html_document:
+    fig_align: center
     fig_caption: yes
     fig_height: 6
     fig_width: 8
@@ -121,6 +121,8 @@ for any given species, where *t* is time, *Y* represents fishing yields, *s* is 
 
 We also analyze two potential financial mechanisms for offsetting short-term fishery losses stemming from the reserve; a loan system and a value added system. The total relative loss in yields experienced by the fishery for a given scenario *s* is 
 
+*Note I think I've now tured r to zero, I think that's better*
+
 (14) $O_{s} = -\sum^{T}_{t=0} min(0,\frac{Y_{s,t}-Y_{q}}{(1+r)^{t}})$
 
 Where *O~a* is the amount of yield lost relative to the status quo. Under the loan strategy, a non-governmental organization, government, or private investor could provide a community with a loan to offset the initial losses from implementing a reserve, with a goal of being repaid by the future fishery benefits resulting from enhanced fishery productivity. The fishing community requests a loan totalling *O~a~*. The surplus available to pay the loan back over time are equal to 
@@ -171,7 +173,7 @@ species_compnoshark_plot
 
 Rather than comparing the performance of individually optimized runs, we can also ask how the economic impacts of reserves evolve when a common reserve strategy is implemented across all species. We selected the reserve strategy (the unique combination of terminal size, intercept, and slope) that maximized the net utility across all six species. 
 
-* Net resut, solid results for some species, at the expense of sharks and trevally
+* Net resut, solid results for some species, at the expense of sharks and trevally, but on the whole the common strategy shows promise
 
 ```{r, fig.cap= 'Comparison of NPB performance across each species using the across-species optimal reserve strategy'}
 unified_npb_plot
@@ -199,29 +201,64 @@ static_netbenefit_plot
 
 ```
 
-Given then that we've still got a valley of death to deal with, how do the loan and price increase scenarios perform under potential uncertainty in the correct reserve to apply. 
+Our results show though that while design has some potential for offsetting the short-term economic impacts of reserves, there are substantial challenges for relying solely on design as a solution. First, we see that reserves greater than 25% have very little chance of providing positive NPB for the majority of common reef fish studied here (Fig.5). However, numerous studies suggest that from a conservation perspective marine reserves covering 25-30% of range are a minimum recommended amount (XX CITATION). Our results show then that reserves designed in this fashion may struggle to provide perceived net benefits to many communities. In addition, even in the cases where NPB is highly positive, the time to achieve that NPB is quite long **should the timing be NB not NPBXX** (Fig.6). Therefore, even when benefits acrue there is still a period of losses that must be dealt with. For both of these reasons, we can consider the potential of our financial instruments. 
+
+**10 year loans don't work well except for philanthropy**
 
 ```{r, fig.cap= 'Maximum % interest rate payable by a fishery for each species across a range of terminal reserve sizes'}
 static__maxinterest_plot
 ```
 
+The percent price increase required increased almost exponentially with the reserve size. However, the price increase shows the potential to offset much larger reserves, with increases of 20% capable of offsetting reserves closer to 30% in many cases. In addition, relatively small price increases (<20%) are sufficient to bring species such as blacknose shark and silver trevally, which were not benefited by design or loans, into a positive situation
+
+* Price increases are good but not feasible for things like 50% reserves
+
 ```{r, fig.cap= ' % Price increase required by a fishery for each species across a range of terminal reserve sizes'}
 static__priceinc_plot
 ```
 
-## Impacts of Wrong Implementation strategy
+## Impacts of Dynamic MPAs
 
 Lastly, let's look at what happens when we consider both terminal reserve size and intercept (shrinking or growing). Since 3d plots are bad we fix the slope at 10 years, meaning that the reserve hits terminal size in 10 years. 
+
+* With a fixed slope of 10 years, we see that design doesn't matter all that much from an NPB perspective. The NPB is sensitive to the terminal reserve size, as we already saw, but it's not very sensitive to the intercept (i.e. is it growing or shrinking). Whie we see that the optimal solution is often to shrink, it doesn't make a huge difference if you grow instead in terms of NPB. 
 
 ```{r, fig.cap= ' NPB as a function of terminal reserve and intercept'}
 npb_surface_plot
 ```
+
+Same story with loans, not many are viable
+
+```{r, fig.cap= ' Viable loan type as a function of terminal reserve and intercept'}
+loantype_surface_plot
+```
+
+Lastly, we see that the intercept does change the percent price increase required
+
+* Interestingly, while the optimal is often to shrink, a growing strategy greatly reduces the required percent price increase. At the same reserve size, implementing a growing strategy can move frmo a required price increase of 80% under shrinking to <20% under growing
 
 ```{r, fig.cap= ' % Price increase required as a function of terminal reserve and intercept'}
 priceinc_surface_plot
 ```
 
 
-```{r, fig.cap= ' Viable loan type as a function of terminal reserve and intercept'}
-loantype_surface_plot
-```
+# Discussion
+
+* NPB matters: Even if there's a huge net benefit in the future, it doesn't matter if it takes 1000 years to get there
+* As Brown et al. [-@Brown2014] showed, timing can be a problem with reserves
+* The good news
+    * For clades of species (snapper, emperor, grouper, parrot), you can get away with not having the exact right reserve, both individually and across species
+    * reasonable price increases could offset the valley of death
+    * Complications life slope and intercept help, but aren't deal breakers
+* The bad news
+    * Even a small discount rate quickly reducses the potential to achieve positive NPB: while there might be benefits to the long term planner good luck with the community. [@Teh2014] as evidence of high discount rate in artisanal fisheries. 
+    * Some species aren't possible
+    * 10 year Loans don't seem viable
+    * Especially with a discount rate, the optimal or viable reserve size is quite a bit smaller than the target side touted by conservationists. 
+* The take home
+    * Design can certainly help, but it's somewhat finicky, and even done perfectly, might not then achieve the conservation objectives if the community has a strong discount rate
+    * That leaves financial mechanisms. Which we show have some promise
+    * We'll probbaly need RBFM to make them happen though
+    
+# Works Cited
+

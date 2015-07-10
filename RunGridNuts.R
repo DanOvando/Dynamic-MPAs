@@ -32,9 +32,9 @@ OptTime <- 30 #Time Horizon to optimize over
 Alpha <- 0.5
 fig_width <- 7
 fig_height <- 5
-text_size <- 10
+text_size <- 12
 TimeToRun <- OptTime + 1
-
+LoanTime <- 11
 DiscRates <- 0.1
 
 BasePatches <- Patches
@@ -239,17 +239,22 @@ ResSummary <- ReserveResults %>%
             ReserveSize = mean(FinalReserve), 
             Intercept = mean(Intercept), 
             Slope = mean(Slope),
-            NegativeYields = Discount(pmin(0,YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV,
-            StatusQuoYields = Discount(SQYield * (YieldBalance <= 0),Fleet$YieldDiscount,length(YieldBalance))$NPV,
+            NegativeYields = Discount(pmin(0,YieldBalance),0,length(YieldBalance))$NPV,
+            StatusQuoYields = Discount(SQYield * (YieldBalance <= 0),0,length(YieldBalance))$NPV,
             PriceInc = 100 * (StatusQuoYields / (StatusQuoYields + NegativeYields) - 1),
-            AvailableSurplus = Discount(pmax(0, YieldBalance),Fleet$YieldDiscount,length(YieldBalance))$NPV)
+            AvailableSurplus = Discount(pmax(0, YieldBalance),0,length(YieldBalance))$NPV,
+            LoanNegativeYields = Discount(pmin(0,YieldBalance[1:LoanTime]),0,length(YieldBalance[1:LoanTime]))$NPV,
+            LoanStatusQuoYields = Discount((SQYield * (YieldBalance <= 0))[1:LoanTime],0,length(YieldBalance[1:LoanTime]))$NPV,
+            LoanAvailableSurplus = Discount(pmax(0, YieldBalance[1:LoanTime]),0,length(YieldBalance[1:LoanTime]))$NPV)
+
+
 
 RunNames <- unique(ResSummary$Run)
 for (i in seq_len(length(RunNames)))
 {
   Where <- ResSummary$Run ==  RunNames[i]
-  ResSummary$MaxInterestRate[i] <- 100 * exp( optim(-4, FindMaxInterestRate, LoanTime = 10, LoanAmount = -ResSummary$NegativeYields[Where],
-                                                    Surplus = ResSummary$AvailableSurplus[Where],lower = -10, upper = 10,method = 'Brent')$par)
+  ResSummary$MaxInterestRate[i] <- 100 * exp( optim(-4, FindMaxInterestRate, LoanTime = LoanTime, LoanAmount = -ResSummary$LoanNegativeYields[Where],
+                                                    Surplus = ResSummary$LoanAvailableSurplus[Where],lower = -10, upper = 10,method = 'Brent')$par)
 }
 
 ResSummary$TimeToNPB[is.na(ResSummary$TimeToNPB)] <- max(ReserveResults$Year)
@@ -284,26 +289,26 @@ ggsave(file=paste(BatchFolder,'Optimal Reserve Trajectory.pdf',sep=''),plot=opt_
 
 
 unified_npb_plot<- (ggplot(data = filter(ReserveResults,BestUnifiedRun == T) ,aes(x = Year, y = NPB))+geom_line(size = 1.2)+
-                  geom_point(aes(fill = s_Balance-1,size = CurrentReserve), shape = 21) + 
-                  facet_wrap(~Species,scales = 'free_y') +
-                  scale_fill_gradient2(labels = percent, name = '% Change from SQ Yields',low = 'red', mid = 'yellow', high = 'green',midpoint = 0)
-                + geom_hline(aes(yintercept = 0), linetype = 'longdash', color = 'grey2') + 
-                  SimpleTheme + 
-                  scale_size_continuous(labels = percent, name = '% Reserve') + 
-                  theme(legend.position = 'right'))
+                      geom_point(aes(fill = s_Balance-1,size = CurrentReserve), shape = 21) + 
+                      facet_wrap(~Species,scales = 'free_y') +
+                      scale_fill_gradient2(labels = percent, name = '% Change from SQ Yields',low = 'red', mid = 'yellow', high = 'green',midpoint = 0)
+                    + geom_hline(aes(yintercept = 0), linetype = 'longdash', color = 'grey2') + 
+                      SimpleTheme + 
+                      scale_size_continuous(labels = percent, name = '% Reserve') + 
+                      theme(legend.position = 'right'))
 
 ggsave(file=paste(BatchFolder,'Unified NPB Trajectory.pdf',sep=''),plot=unified_npb_plot,width=fig_width,height=fig_height)
 
 
 unified_reserve_plot<- (ggplot(data = filter(ReserveResults,BestUnifiedRun == T) ,aes(x = Year, y = CurrentReserve))+geom_line(size = 1.2)+
-                      geom_point(aes(fill = NPB), shape = 21) + 
-                      facet_wrap(~Species,scales  = 'fixed') +
-                      scale_fill_gradient2(name = 'NPB',low = 'red', mid = 'yellow', high = 'green',midpoint = 1) + 
-                      SimpleTheme + 
-                      geom_hline(aes(yintercept = 0, linetype = 'longdash')) + 
-                      xlab('Year') + 
-                      scale_y_continuous(labels = percent) + 
-                      theme(legend.position = 'right'))
+                          geom_point(aes(fill = NPB), shape = 21) + 
+                          facet_wrap(~Species,scales  = 'fixed') +
+                          scale_fill_gradient2(name = 'NPB',low = 'red', mid = 'yellow', high = 'green',midpoint = 1) + 
+                          SimpleTheme + 
+                          geom_hline(aes(yintercept = 0, linetype = 'longdash')) + 
+                          xlab('Year') + 
+                          scale_y_continuous(labels = percent) + 
+                          theme(legend.position = 'right'))
 ggsave(file=paste(BatchFolder,'Unified Reserve Trajectory.pdf',sep=''),plot=unified_reserve_plot,width=fig_width,height=fig_height)
 
 
@@ -446,19 +451,23 @@ static__priceinc_plot <- (ggplot(data = StaticSummary  ,
                             theme(legend.position = 'none'))
 ggsave(file = paste(BatchFolder,'Static Price Increase Needed.pdf',sep = ''),plot = static__priceinc_plot,width = fig_width,height = fig_height)
 
+StaticSummary$LoanType[StaticSummary$MaxInterestRate <= 5] <- 'Philanthropy' 
+
+StaticSummary$LoanType[StaticSummary$MaxInterestRate > 5 & StaticSummary$MaxInterestRate <=15] <- 'Social Investment' 
+
+StaticSummary$LoanType[StaticSummary$MaxInterestRate > 15] <- 'Commercial' 
+
 
 static__maxinterest_plot <- (ggplot(data = StaticSummary  ,
-                                    aes(x = ReserveSize,y = MaxInterestRate/100,fill = MaxInterestRate)) +
+                                    aes(x = ReserveSize,y = MaxInterestRate/100,fill = LoanType)) +
                                geom_bar(stat = 'identity', position = 'dodge', color = 'black') +
-                               facet_wrap(~Species, scales = 'fixed') + 
-                               scale_fill_gradient(high = 'green', low = 'red') +
-                               #                  scale_fill_brewer(palette = 'Dark2') +
+                               facet_wrap(~Species, scales = 'free_y') + 
+                               scale_fill_manual(values = c('green','red','steelblue2'),name = element_blank()) + 
                                xlab('Size of Reserve') + 
                                ylab('Maximum Interest Rate') + 
                                scale_x_continuous(labels = percent) + 
                                scale_y_continuous(labels = percent) + 
-                               SimpleTheme + 
-                               theme(legend.position = 'none'))
+                               SimpleTheme )
 ggsave(file = paste(BatchFolder,'Static Interest Rate Possible.pdf',sep = ''),plot = static__maxinterest_plot,width = fig_width,height = fig_height)
 
 # Analyze Dynamic Reserves ------------------------------------------------
