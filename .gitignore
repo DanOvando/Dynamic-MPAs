@@ -10,4 +10,6 @@
 **/*.jpg
 **/*.txt
 **/*.Rproj
+**/*.png
+Figs/**.*
 packrat/lib*/

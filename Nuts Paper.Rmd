@@ -34,11 +34,37 @@ load(paste('Results/',ModelRun,'/NutsPlots.Rdata',sep = ''))
 
 ```
 
+# Note
+
+ * Play with the discount rate to include the biomass stuff, to show that the biomass goes up
+ * The most robust reserve 
+ * Cap interest rate at 25%
+ * Loans 
+ * Show trajectory with and without the price increase
+ * Put cartoon back in 
+ * fig 4 out
+ * make figure 5 colored by timing to benefit 
+ *
+ 
+ 1. Cartoon
+ 2. Discount
+ 3. NPB
+ 4. Trajectories
+ 5. Price
+ 6. Loan
+ 7. Cross species
+ 
+ 
+
 # Abstract
 
 Well-managed fisheries are critical for supporting healthy ocean ecosystems, coastal livelihoods, and food security for millions of people. Many communities lack the resources to implement effective fisheries management. No-take marine reserves are a relatively simple tool to conserve biodiversity and provide fishery benefits. Although empirical examples of fishery benefits from reserves are becoming more prevalent, the short-term economic impacts of establishing marine reserves are rarely considered.  In this paper we simulate fisheries for six species commonly caught in coastal fisheries in order to demonstrate the time required for a no-take reserve to provide a net improvement in the economic wellbeing of a fishing community. Our results show that while conservation benefits accrue rapidly, more than a decade is often required to provide net fisheries benefits, even under circumstances favorable for reserves. We explore a suite of strategies for mitigating these short-term economic losses, including flexible reserve designs, rights-based management, and loans. Our results indicate that combinations of these strategies can greatly reduce the short-term economic impacts of no-take marine reserves. Our findings provide mechanisms for improving the viability of no-take marine reserves as tools for fisheries management and conservation. 
 
 # Introduction
+
+Across the globe, more than 260 million people earn their livelihood in fishing related industries [@Teh2014]. Fish is a primary source of protein to over one billion people [@FAO2011]. Yet the sustainability of the fishing industry and the potential for wild capture fisheries to indefinitely feed a growing population is dependent on the implementation and enforcement of effective systems of governance and management. No-take marine reserves (hereafter reserves), areas set off limits to fishing, are a widely used tool for protecting fish populations and are known to provide key conservation benefits that can improve ecosystem services to coastal environments. Conservation benefits of marine reserves include the maintenance of spatial population structure of fish stocks [@Berkeley2004; @White2008; @Rassweiler2012], protection of essential fish habitat, increased species diversity and fish biomass [@Lester2009], and can serve as reference areas to set local management regulations and disentangle the effects of fishing from environmental variability [@Wilson2013]. Enhanced biological production inside reserves can benefit adjacent fisheries through adult spillover [@Roberts1991; @Allison1998; @McClanahan2008] and larval export [@Cudney-Bueno2009; @Pelc2010], especially in situations where the size of the reserve is larger than the adult home range size, and smaller than the scale of larval dispersal [@Gerber2003]. Reserves can also serve as a hedge against changes in environmental conditions [@Stefansson2005; @Costello2008)] and as an effective means of protecting spatially complex marine populations [@White2008; @Rassweiler2012]. 
+
+
 
 * Plenty of papers have pointed out the challenges of using MPAs to manage fisheries
     * Conservation benefits clear
@@ -120,6 +146,10 @@ Throughout each scenario we keep track of live biomass of fish in the water and 
 
 for any given species, where *t* is time, *Y* represents fishing yields, *s* is reserve implementation strategy, *q* is the status quo, *r* is the economic discount rate, and *T* is a specified number of years after reserve implementation in which *NPB* is calculated and compared across scenarios and species. We calculate the year at which NPB surpasses zero (increased benefits have compensated for short-term losses). NPB is an important output, since it reflects the net benefit that a community perceives from a given reserve strategy, relative to their benefit without the reserve. Alternatively, present balance (PB), the discounted difference between yields of a given reserve strategy and the status quo in year t, while important and a commonly presented metric, may not be as meaningful to a community (e.g. a 1 ton improvement over the status quo in year 10 of a reserve strategy may be of little value if 1,000 tons have been lost in years 1 through 9; see Fig.1 for an illustration of these concepts). 
 
+## Concept Graph
+
+## Financial Mechanisms
+
 We also analyze two potential financial mechanisms for offsetting short-term fishery losses stemming from the reserve; a loan system and a value added system. The total relative loss in yields experienced by the fishery for a given scenario *s* is 
 
 *Note I think I've now tured r to zero, I think that's better*
@@ -143,6 +173,15 @@ Reserves often face competing obejctives between long-term and short-term benefi
 This allows us to calculate utility focused solely on long-term benefits ($\alpha$=1), short-term benefits ($\alpha$=0), or any relative weighting in between. 
 
 # Results
+
+## Discount Rate
+```{r, fig.cap='NPB trajectories under optimal reserve scenario under different discount rates'}
+
+discount_rate_plot
+
+```
+
+
 
 ## Optimal Impacts
 

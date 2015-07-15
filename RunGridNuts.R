@@ -166,7 +166,7 @@ SimpleTheme <- theme(legend.position = 'top',text = element_text(size = text_siz
 
 Fleet$YieldDiscount <- discount_rate
 
-ProcessedNuts <- ProcessNuts(ReserveResults = ReserveResults, Fleet = Fleet, Scale_Yields = Scale_Yields)
+ProcessedNuts <- ProcessNuts(ReserveResults = ReserveResults, Fleet = Fleet, Scale_Yields = Scale_Yields, long_term_objective = long_term_objective)
 
 ReserveResults <- ProcessedNuts$ReserveResults
 
@@ -201,13 +201,26 @@ species_comp_plot <- species_comp_plot_fun(PlotData = species_comparison, Theme 
 
 ggsave(file = paste(BatchFolder,'Opt Species Comparison.pdf',sep = ''),plot = species_comp_plot,width = fig_width,height = fig_height)
 
+
+# Different Discount Rates ------------------------------------------------
+
+Discounts <- seq(0, 0.5, by = 0.05)
+
+Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = ReserveResults, Alpha = long_term_objective ) %>% ldply()
+
+quartz()
+
+discount_rate_plot <- discount_npb_plot_fun(filter(Opt_by_Discount, Species == 'Yellowtail Snapper'), SimpleTheme)
+
+ggsave(file = paste(BatchFolder,'Discount Rate NPB.pdf',sep = ''),plot = discount_rate_plot,width = fig_width,height = fig_height)
+
 # Analyze Static Reserve -----------------------------------------
 
 StaticReserve <- filter(ReserveResults, Year == max(Year) & Intercept == 0 & Slope == 0)
 
 StaticSummary <- filter(ResSummary, Intercept == 0 & Slope == 0)
 
-static_NPB_plot <- static_NPB_plot_fun(PlotData = StaticReserve, Theme = SimpleTheme)
+static_NPB_plot <- static_NPB_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
 
 ggsave(file = paste(BatchFolder,'Static NPB.pdf',sep = ''),plot = static_NPB_plot,width = fig_width,height = fig_height)
 
@@ -284,7 +297,7 @@ multispecies <- ReserveResults %>%
     Slope = mean(Slope))
 
 
-multispecies_nuts <- ProcessNuts(ReserveResults = multispecies, Fleet = Fleet, Scale_Yields = Scale_Yields)
+multispecies_nuts <- ProcessNuts(ReserveResults = multispecies, Fleet = Fleet, Scale_Yields = Scale_Yields, long_term_objective = long_term_objective)
 
 ms_ReserveResults <- multispecies_nuts$ReserveResults
 

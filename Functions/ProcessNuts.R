@@ -1,4 +1,4 @@
-ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields)
+ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
 {
   
   if (Scale_Yields == T)
@@ -37,7 +37,7 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields)
   
   OptimalRun<- filter(ReserveResults,Year==max(Year)) %>%
     group_by(Species) %>%
-    summarize(OptNPB = Run[NPB == max(NPB)], OptEQ = Run[net_yields == max(net_yields)], OptUtility = Run[Utility == max(Utility)])
+    summarize(OptNPB = Run[NPB == max(NPB)][1], OptEQ = Run[net_yields == max(net_yields)][1], OptUtility = Run[Utility == max(Utility)][1])
   
   ReserveResults$Scenario <- with(ReserveResults,paste(FinalReserve,Intercept,Slope,sep = '-'))
   
@@ -50,7 +50,6 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields)
   ReserveResults$BestUnifiedRun <- ReserveResults$Scenario %in% BestUnifiedScenario
   
   ReserveResults$BestRun <- ReserveResults$Run %in% OptimalRun$OptUtility
-  
   
   ResSummary <- ReserveResults %>%
     group_by(Run) %>%
@@ -69,8 +68,6 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields)
               LoanNegativeYields = Discount(pmin(0,YieldBalance[1:LoanTime]),0,length(YieldBalance[1:LoanTime]))$NPV,
               LoanStatusQuoYields = Discount((SQYield * (YieldBalance <= 0))[1:LoanTime],0,length(YieldBalance[1:LoanTime]))$NPV,
               LoanAvailableSurplus = Discount(pmax(0, YieldBalance[1:LoanTime]),0,length(YieldBalance[1:LoanTime]))$NPV)
-  
-  
   
   RunNames <- unique(ResSummary$Run)
   for (i in seq_len(length(RunNames)))
