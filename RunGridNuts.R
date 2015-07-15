@@ -204,11 +204,9 @@ ggsave(file = paste(BatchFolder,'Opt Species Comparison.pdf',sep = ''),plot = sp
 
 # Different Discount Rates ------------------------------------------------
 
-Discounts <- seq(0, 0.5, by = 0.05)
+Discounts <- c(0,0.1,0.2)
 
 Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = ReserveResults, Alpha = long_term_objective ) %>% ldply()
-
-quartz()
 
 discount_rate_plot <- discount_npb_plot_fun(filter(Opt_by_Discount, Species == 'Yellowtail Snapper'), SimpleTheme)
 

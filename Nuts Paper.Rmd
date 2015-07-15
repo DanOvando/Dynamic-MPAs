@@ -181,7 +181,37 @@ discount_rate_plot
 
 ```
 
+## Sensitivity to Design
 
+Results up to here show that yes reserves can take time to provide benefits if at all, design can help a bit, multi-species adds another layer though many species do just about as well with similar species reserves as they do with their optimal one. 
+
+We first consider how sensitive our results are to implementing the incorrect terminal reserve size. Or in other words, we consider our results under a range of terminal reserve sizes, and ask how sensitive our results are to being in a particular window. If it's small, unlikely that we'll find it in the real world.  
+
+* For bumphead, grouper, and snapper peak NPB occurs at around 10% reserve size, neagative by about 20%. Emperor much larger. Blacknose shark and trevally not possible. This suggests that reserves less than 20% viable from an NPB perspective for many common species, not so much beyond that. But, it's not knife edged (optimal or bust)
+
+```{r, fig.cap= 'NPB under possible terminal reserve sizes for each species'}
+static_NPB_plot
+```
+
+So, under static scenario we see that NPB is somewhat sensitive to terminal reserve size, but not extremely; for a general class of reserves under 20% seems possible, though the scale of it matters. What about other metrics?
+
+* We see that even though positive NPB is possible up to the sizes seen in Fig.4, it takes a long time to achieve. So, while the ability to break even at all is somewhat insensitive to reserve size, the amount of time required increases almost exponentially in reserve size.
+
+Our results show though that while design has some potential for offsetting the short-term economic impacts of reserves, there are substantial challenges for relying solely on design as a solution. First, we see that reserves greater than 25% have very little chance of providing positive NPB for the majority of common reef fish studied here (Fig.5). However, numerous studies suggest that from a conservation perspective marine reserves covering 25-30% of range are a minimum recommended amount (XX CITATION). Our results show then that reserves designed in this fashion may struggle to provide perceived net benefits to many communities. In addition, even in the cases where NPB is highly positive, the time to achieve that NPB is quite long **should the timing be NB not NPBXX** (Fig.6). Therefore, even when benefits acrue there is still a period of losses that must be dealt with. For both of these reasons, we can consider the potential of our financial instruments. 
+
+**10 year loans don't work well except for philanthropy**
+
+```{r, fig.cap= 'Maximum % interest rate payable by a fishery for each species across a range of terminal reserve sizes'}
+static__maxinterest_plot
+```
+
+The percent price increase required increased almost exponentially with the reserve size. However, the price increase shows the potential to offset much larger reserves, with increases of 20% capable of offsetting reserves closer to 30% in many cases. In addition, relatively small price increases (<20%) are sufficient to bring species such as blacknose shark and silver trevally, which were not benefited by design or loans, into a positive situation
+
+* Price increases are good but not feasible for things like 50% reserves
+
+```{r, fig.cap= ' % Price increase required by a fishery for each species across a range of terminal reserve sizes'}
+static__priceinc_plot
+```
 
 ## Optimal Impacts
 
@@ -205,90 +235,6 @@ MPAs are commonly used as a tool for multi-species management, especially in the
 
 ```{r, fig.cap= 'Comparison of NPB performance for each species using the other species optimal reserve'}
 species_comp_plot
-```
-
-
-Rather than comparing the performance of individually optimized runs, we can also ask how the economic impacts of reserves evolve when a common reserve strategy is implemented across all species. We selected the reserve strategy (the unique combination of terminal size, intercept, and slope) that maximized the net utility across all six species. 
-
-* Net resut, solid results for some species, at the expense of sharks and trevally, but on the whole the common strategy shows promise
-
-```{r, fig.cap= 'Comparison of NPB performance across each species using the across-species optimal reserve strategy'}
-unified_npb_plot
-```
-
-## Impacts of Wrong Size Reserve
-
-Results up to here show that yes reserves can take time to provide benefits if at all, design can help a bit, multi-species adds another layer though many species do just about as well with similar species reserves as they do with their optimal one. 
-
-We first consider how sensitive our results are to implementing the incorrect terminal reserve size. Or in other words, we consider our results under a range of terminal reserve sizes, and ask how sensitive our results are to being in a particular window. If it's small, unlikely that we'll find it in the real world.  
-
-* For bumphead, grouper, and snapper peak NPB occurs at around 10% reserve size, neagative by about 20%. Emperor much larger. Blacknose shark and trevally not possible. This suggests that reserves less than 20% viable from an NPB perspective for many common species, not so much beyond that. But, it's not knife edged (optimal or bust)
-
-```{r, fig.cap= 'NPB under possible terminal reserve sizes for each species'}
-static_NPB_plot
-```
-
-So, under static scenario we see that NPB is somewhat sensitive to terminal reserve size, but not extremely; for a general class of reserves under 20% seems possible, though the scale of it matters. What about other metrics?
-
-* We see that even though positive NPB is possible up to the sizes seen in Fig.4, it takes a long time to achieve. So, while the ability to break even at all is somewhat insensitive to reserve size, the amount of time required increases almost exponentially in reserve size.
-
-```{r,fig.cap= 'Number of years to achieve positive NPB.'}
-
-static_netbenefit_plot
-
-```
-
-Our results show though that while design has some potential for offsetting the short-term economic impacts of reserves, there are substantial challenges for relying solely on design as a solution. First, we see that reserves greater than 25% have very little chance of providing positive NPB for the majority of common reef fish studied here (Fig.5). However, numerous studies suggest that from a conservation perspective marine reserves covering 25-30% of range are a minimum recommended amount (XX CITATION). Our results show then that reserves designed in this fashion may struggle to provide perceived net benefits to many communities. In addition, even in the cases where NPB is highly positive, the time to achieve that NPB is quite long **should the timing be NB not NPBXX** (Fig.6). Therefore, even when benefits acrue there is still a period of losses that must be dealt with. For both of these reasons, we can consider the potential of our financial instruments. 
-
-**10 year loans don't work well except for philanthropy**
-
-```{r, fig.cap= 'Maximum % interest rate payable by a fishery for each species across a range of terminal reserve sizes'}
-static__maxinterest_plot
-```
-
-The percent price increase required increased almost exponentially with the reserve size. However, the price increase shows the potential to offset much larger reserves, with increases of 20% capable of offsetting reserves closer to 30% in many cases. In addition, relatively small price increases (<20%) are sufficient to bring species such as blacknose shark and silver trevally, which were not benefited by design or loans, into a positive situation
-
-* Price increases are good but not feasible for things like 50% reserves
-
-```{r, fig.cap= ' % Price increase required by a fishery for each species across a range of terminal reserve sizes'}
-static__priceinc_plot
-```
-
-## Impacts of Dynamic MPAs
-
-Lastly, let's look at what happens when we consider both terminal reserve size and intercept (shrinking or growing). Since 3d plots are bad we fix the slope at 10 years, meaning that the reserve hits terminal size in 10 years. 
-
-* With a fixed slope of 10 years, we see that design doesn't matter all that much from an NPB perspective. The NPB is sensitive to the terminal reserve size, as we already saw, but it's not very sensitive to the intercept (i.e. is it growing or shrinking). Whie we see that the optimal solution is often to shrink, it doesn't make a huge difference if you grow instead in terms of NPB. 
-
-```{r, fig.cap= ' NPB as a function of terminal reserve and intercept'}
-npb_surface_plot
-```
-
-Same story with loans, not many are viable
-
-```{r, fig.cap= ' Viable loan type as a function of terminal reserve and intercept'}
-loantype_surface_plot
-```
-
-Lastly, we see that the intercept does change the percent price increase required
-
-* Interestingly, while the optimal is often to shrink, a growing strategy greatly reduces the required percent price increase. At the same reserve size, implementing a growing strategy can move frmo a required price increase of 80% under shrinking to <20% under growing
-
-```{r, fig.cap= ' % Price increase required as a function of terminal reserve and intercept'}
-priceinc_surface_plot
-```
-
-
-```{r, fig.cap= ' Multi Species Optimal Trajectory', fig.show='hold'}
-msopt_npb_plot
-```
-
-```{r, fig.cap= ' Multi Species Summary', fig.show='hold'}
-grid.arrange(MultiSpecies_StaticPlots_plot)
-```
-
-```{r, fig.cap= ' Multi Species Surface Summary', fig.show='hold'}
-grid.arrange(MultiSpecies_surface_plot)
 ```
 
 # Discussion

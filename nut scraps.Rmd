@@ -1,0 +1,52 @@
+---
+title: "Nuts Scratch"
+author: "Dan Ovando"
+date: "July 15, 2015"
+output: pdf_document
+---
+
+Rather than comparing the performance of individually optimized runs, we can also ask how the economic impacts of reserves evolve when a common reserve strategy is implemented across all species. We selected the reserve strategy (the unique combination of terminal size, intercept, and slope) that maximized the net utility across all six species. 
+
+* Net resut, solid results for some species, at the expense of sharks and trevally, but on the whole the common strategy shows promise
+
+```{r, fig.cap= 'Comparison of NPB performance across each species using the across-species optimal reserve strategy'}
+unified_npb_plot
+```
+
+
+## Impacts of Dynamic MPAs
+
+Lastly, let's look at what happens when we consider both terminal reserve size and intercept (shrinking or growing). Since 3d plots are bad we fix the slope at 10 years, meaning that the reserve hits terminal size in 10 years. 
+
+* With a fixed slope of 10 years, we see that design doesn't matter all that much from an NPB perspective. The NPB is sensitive to the terminal reserve size, as we already saw, but it's not very sensitive to the intercept (i.e. is it growing or shrinking). Whie we see that the optimal solution is often to shrink, it doesn't make a huge difference if you grow instead in terms of NPB. 
+
+```{r, fig.cap= ' NPB as a function of terminal reserve and intercept'}
+npb_surface_plot
+```
+
+Same story with loans, not many are viable
+
+```{r, fig.cap= ' Viable loan type as a function of terminal reserve and intercept'}
+loantype_surface_plot
+```
+
+Lastly, we see that the intercept does change the percent price increase required
+
+* Interestingly, while the optimal is often to shrink, a growing strategy greatly reduces the required percent price increase. At the same reserve size, implementing a growing strategy can move frmo a required price increase of 80% under shrinking to <20% under growing
+
+```{r, fig.cap= ' % Price increase required as a function of terminal reserve and intercept'}
+priceinc_surface_plot
+```
+
+
+```{r, fig.cap= ' Multi Species Optimal Trajectory', fig.show='hold'}
+msopt_npb_plot
+```
+
+```{r, fig.cap= ' Multi Species Summary', fig.show='hold'}
+grid.arrange(MultiSpecies_StaticPlots_plot)
+```
+
+```{r, fig.cap= ' Multi Species Surface Summary', fig.show='hold'}
+grid.arrange(MultiSpecies_surface_plot)
+```
