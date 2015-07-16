@@ -28,6 +28,9 @@ knitr::opts_chunk$set(fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE
 ```{r}
 library(gridExtra)
 library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
 ModelRun <- 'Full Grid 2.1'
 
 load(paste('Results/',ModelRun,'/NutsPlots.Rdata',sep = ''))
@@ -81,16 +84,42 @@ We find that for many reef-fish species, reserves may struggle to provide net fi
 
 ## Operating Model
 
-We analyzed 6 different species, intended to capture a range of life-history traits of species often targeted by developing country fisheries (see supplementary online material for species and life history parameters). Our model is single species, age-structured and assumed to be closed with respect to larval and adult emigration . The spatial configuration of the fishery includes 100 unique patches connected by larval and adult movement. The model tracks stock biomass, fishery yields, and net present benefits each year. 
+We analyzed 6 different species, intended to capture a range of life-history traits of species often targeted by developing country fisheries (see supplementary online material for species and life history parameters). Our model is single species, age-structured and assumed to be closed with respect to larval and adult emigration . The spatial configuration of the fishery includes 100 unique patches connected by larval and adult movement. The model tracks stock numbers, biomass,  fishery yields over time. 
+
+Life history values were drawn from stock assessments where possible, in order to help ensure reliable and consistent values(Table.1). The recruitment model (or the functional for of the density dependence relationship) was selected from the possible structures outlined in Babcock & MacCall [-@Babcock2011] using expert judgement.  
 
 ```{r}
 
 LifeHistories <- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors = F)
 
-LifeVars <- c('CommName','SciName','Range','MaxAge','m','k','Linf','t0','AgeMa50','LengthMa50','BH.Steepness','wa','wb','DDForm','Source)
+LifeVars <- c('CommName','Range','m','k','Linf','t0','AgeMa50','LengthMa50','BH.Steepness','wa','wb','DDForm','Source')
 
-LifeTable <- LifeHistories[, LifeVars]
+LifeTable <- LifeHistories[, LifeVars] %>%
+  rename(Species = CommName, h = BH.Steepness)
 
+
+LifeTable$DDForm[LifeTable$DDForm == 'Babcock1'] <- 'I'
+
+LifeTable$DDForm[LifeTable$DDForm == 'Babcock2'] <- 'II'
+
+LifeTable$DDForm[LifeTable$DDForm == 'Babcock3'] <- 'III'
+
+LifeTable$DDForm[LifeTable$DDForm == 'Babcock4'] <- 'IV'
+
+LifeTable$DDForm[LifeTable$DDForm == 'Babcock5'] <- 'V'
+
+LifeTable$DDForm[LifeTable$DDForm == 'Shark'] <- 'I'
+
+LifeTable$DDForm <- paste(LifeTable$DDForm, '*',sep = '')
+
+LifeTable <- LifeTable %>% 
+  rename('Recruitment Model' = DDForm)
+
+LifeTable$Range <- paste(100*LifeTable$Range, '%',sep = '')
+
+LifeTable$Range <- paste(LifeTable$Range, '*',sep = '')
+
+kable(LifeTable, digits = 2, caption = 'Life history values used. m is natural mortality, Linf, k, and t0 are the Von Bertalanffy growth parameters, Age/Length Ma50 are the respective age or length at which the 50% of the individuals have reached sexual maturity, h is steepness, and the roman numeral under "Density Dependence" corresponds with the density dependence form from Babcock & MacCall 2011 that was used. Values with * were assumed')
 
 ```
 
@@ -250,6 +279,8 @@ species_comp_plot
 ```
 
 # Discussion
+
+* Design isn't all that important, within certain bounds, conditional on any benefits being possible
 
 * NPB matters: Even if there's a huge net benefit in the future, it doesn't matter if it takes 1000 years to get there
 * As Brown et al. [-@Brown2014] showed, timing can be a problem with reserves

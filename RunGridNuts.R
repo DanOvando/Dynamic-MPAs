@@ -39,9 +39,9 @@ DiscRates <- 0.1
 
 BasePatches <- Patches
 
-BatchFolder <- 'Results/Full Grid 2.1/'
+BatchFolder <- 'Results/Scratch/'
 
-RunAnalysis <- FALSE
+RunAnalysis <- TRUE
 
 OptMode <- 'Utility'
 
@@ -61,7 +61,6 @@ LifeColumns <- colnames(LifeHistories)
 
 LifeVars <- c('Range','MaxAge','m','k','Linf','t0','AgeMa50','LengthMa50','MaturityMode','BH.Steepness','wa','wb','WeightForm','fa','fb','DDForm')
 
-LifeTable <- LifeHistories[,LifeVars]
 
 
 if (RunAnalysis == TRUE) {
@@ -93,6 +92,7 @@ if (RunAnalysis == TRUE) {
   
   Populations<- sapply(gsub(' ','',SpeciesList,fixed = T),TargetPop=0.25,PreparePopulations,LifeHistories=LifeHistories,BaseLife=lh,LifeVars = LifeVars,BasePatches = BasePatches,BatchFolder = BatchFolder,USE.NAMES = T)
   
+  browser()
   #   Rprof(tmp <- tempfile(),line.profiling=T)
   #   
   #   BatTargetPopulation<- GrowPopulation(100, 0,'EQ',0,'BatTarget Run',Species='Yellowtail Snapper',lh=Populations$YellowtailSnapper,Patches=Patches,FigureFolder=FigureFolder)
