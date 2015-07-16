@@ -30,9 +30,9 @@ LookAtLengths <- 0
 ReservePosition <- 'Center'
 OptTime <- 50 #Time Horizon to optimize over
 Alpha <- 0.5
-fig_width <- 7
-fig_height <- 5
-text_size <- 12
+fig_width <- 6
+fig_height <- 4
+text_size <- 14
 TimeToRun <- OptTime + 1
 LoanTime <- 11
 DiscRates <- 0.1
@@ -47,13 +47,21 @@ OptMode <- 'Utility'
 
 Scale_Yields <- T
 
-long_term_objective <- 0.5 # 0 to 1, 0 means optimal reserve defined by NPB, 1 by total yields (i.e. discount = 0)
+long_term_objective <- 0.25 # 0 to 1, 0 means optimal reserve defined by NPB, 1 by total yields (i.e. discount = 0)
 
 discount_rate <- .1
 
 fixed_slope <- 0.2
 
 # Run Analysis ---------------------------------------------------------------
+
+LifeHistories <- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors = F)
+
+LifeColumns <- colnames(LifeHistories)
+
+LifeVars <- c('Range','MaxAge','m','k','Linf','t0','AgeMa50','LengthMa50','MaturityMode','BH.Steepness','wa','wb','WeightForm','fa','fb','DDForm')
+
+LifeTable <- LifeHistories[,LifeVars]
 
 
 if (RunAnalysis == TRUE) {
@@ -176,12 +184,15 @@ ResSummary <- ProcessedNuts$ResSummary
 
 # Analyze Optimal Reserve -------------------------------------------------
 
-OptRun<- filter(ReserveResults,BestRun == T)
+OptRun <- filter(ReserveResults,BestRun == T)
 
-opt_npb_plot<- opt_npb_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
+opt_npb_plot <- opt_npb_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
 ggsave(file=paste(BatchFolder,'Optimal NPB Trajectory.pdf',sep=''),plot=opt_npb_plot,width=fig_width,height=fig_height)
 
+opt_biomass_plot <- opt_biomass_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
+
+ggsave(file=paste(BatchFolder,'Optimal Biomass Trajectory.pdf',sep = ''),plot = opt_biomass_plot, width = fig_width, height = fig_height)
 
 opt_reserve_plot <- opt_reserve_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
@@ -206,7 +217,7 @@ ggsave(file = paste(BatchFolder,'Opt Species Comparison.pdf',sep = ''),plot = sp
 
 Discounts <- c(0,0.1,0.2)
 
-Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = ReserveResults, Alpha = long_term_objective ) %>% ldply()
+Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = ReserveResults, Alpha = 0 ) %>% ldply()
 
 discount_rate_plot <- discount_npb_plot_fun(filter(Opt_by_Discount, Species == 'Yellowtail Snapper'), SimpleTheme)
 
@@ -295,80 +306,80 @@ multispecies <- ReserveResults %>%
     Slope = mean(Slope))
 
 
-multispecies_nuts <- ProcessNuts(ReserveResults = multispecies, Fleet = Fleet, Scale_Yields = Scale_Yields, long_term_objective = long_term_objective)
-
-ms_ReserveResults <- multispecies_nuts$ReserveResults
-
-ms_species_comparison <- multispecies_nuts$species_comparison
-
-ms_ResSummary <- multispecies_nuts$ResSummary
-
-ms_surface_results <- subset(ms_ReserveResults,Year == max(Year) & Slope == fixed_slope)
-
-ms_surface_summary <- subset(ms_ResSummary, Slope == fixed_slope)   
-
-ms_surface_summary$LoanType[ms_surface_summary$MaxInterestRate <= 5] <- 'Philanthropy' 
-
-ms_surface_summary$LoanType[ms_surface_summary$MaxInterestRate > 5 & ms_surface_summary$MaxInterestRate <=15] <- 'Social Investment' 
-
-ms_surface_summary$LoanType[ms_surface_summary$MaxInterestRate > 15] <- 'Commercial' 
-
-
-# Multispecies Opt and Static Plots ------------------------------------------------------
-
-OptRun<- filter(ms_ReserveResults,BestRun == T)
-
-grid_SimpleTheme <- SimpleTheme+theme(text = element_text(size = 8), 
-                                      legend.key.size = unit(.5,'cm'))
-
-msopt_npb_plot <- opt_npb_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
-
-ggsave(file=paste(BatchFolder,'Multispecies Optimal NPB Trajectory.pdf',sep=''),plot=msopt_npb_plot,width=fig_width,height=fig_height)
-
-ms_StaticReserve <- filter(ms_ReserveResults, Year == max(Year) & Intercept == 0 & Slope == 0)
-
-ms_StaticSummary <- filter(ms_ResSummary, Intercept == 0 & Slope == 0)
-
-msstatic_NPB_plot <- static_NPB_plot_fun(PlotData = ms_StaticReserve, Theme = grid_SimpleTheme)
-
-ggsave(file = paste(BatchFolder,'Multispecies Static NPB.pdf',sep = ''),plot = msstatic_NPB_plot,width = fig_width,height = fig_height)
-
-msstatic_netbenefit_plot <- static_netbenefit_plot_fun(PlotData = ms_StaticSummary, Theme = grid_SimpleTheme)
-
-ggsave(file = paste(BatchFolder,'Multispecies Static Years to Net Benefit.pdf',sep = ''),plot = msstatic_netbenefit_plot,width = fig_width,height = fig_height)
-
-msstatic__priceinc_plot <- static__priceinc_plot_fun(PlotData = ms_StaticSummary, Theme = grid_SimpleTheme)
-
-ggsave(file = paste(BatchFolder,'Static Price Increase Needed.pdf',sep = ''),plot = static__priceinc_plot,width = fig_width,height = fig_height)
-
-ms_StaticSummary$LoanType[ms_StaticSummary$MaxInterestRate <= 5] <- 'Philanthropy' 
-
-ms_StaticSummary$LoanType[ms_StaticSummary$MaxInterestRate > 5 & ms_StaticSummary$MaxInterestRate <=15] <- 'Social Investment' 
-
-ms_StaticSummary$LoanType[ms_StaticSummary$MaxInterestRate > 15] <- 'Commercial' 
-
-msstatic__maxinterest_plot <- static__maxinterest_plot_fun(PlotData = ms_StaticSummary, Theme = grid_SimpleTheme)
-
-ggsave(file = paste(BatchFolder,'Multispecies Static Interest Rate Possible.pdf',sep = ''),plot = msstatic__maxinterest_plot,width = fig_width,height = fig_height)
-
-MultiSpecies_StaticPlots_plot <- arrangeGrob(msstatic_NPB_plot,msstatic_netbenefit_plot, msstatic__priceinc_plot, msstatic__maxinterest_plot, nrow = 2, ncol =2)
-
-
-# Multispecies Surface Plots ----------------------------------------------
-
-msnpb_surface_plot <- npb_surface_plot_fun(PlotData = ms_surface_results, Theme = grid_SimpleTheme)
-
-ggsave(file=paste(BatchFolder,'Multispecies NPB Surface.pdf',sep=''),plot = msnpb_surface_plot, height = fig_height, width = fig_width)
-
-mspriceinc_surface_plot <- priceinc_surface_plot_fun(PlotData = ms_surface_summary, Theme = grid_SimpleTheme)
-
-ggsave(file=paste(BatchFolder,'Multispecies Prince Inc Surface.pdf',sep=''),plot = mspriceinc_surface_plot, height = fig_height, width = fig_width)
-
-msloantype_surface_plot <- loantype_surface_plot_fun(PlotData = ms_surface_summary, Theme = grid_SimpleTheme)
-
-ggsave(file=paste(BatchFolder,'Multispecies Loan Type Surface.pdf',sep=''),plot = msloantype_surface_plot, height = fig_height, width = fig_width)
-
-MultiSpecies_surface_plot <- arrangeGrob(msnpb_surface_plot, mspriceinc_surface_plot, msloantype_surface_plot, nrow = 2, ncol =2)
+# multispecies_nuts <- ProcessNuts(ReserveResults = multispecies, Fleet = Fleet, Scale_Yields = Scale_Yields, long_term_objective = long_term_objective)
+# 
+# ms_ReserveResults <- multispecies_nuts$ReserveResults
+# 
+# ms_species_comparison <- multispecies_nuts$species_comparison
+# 
+# ms_ResSummary <- multispecies_nuts$ResSummary
+# 
+# ms_surface_results <- subset(ms_ReserveResults,Year == max(Year) & Slope == fixed_slope)
+# 
+# ms_surface_summary <- subset(ms_ResSummary, Slope == fixed_slope)   
+# 
+# ms_surface_summary$LoanType[ms_surface_summary$MaxInterestRate <= 5] <- 'Philanthropy' 
+# 
+# ms_surface_summary$LoanType[ms_surface_summary$MaxInterestRate > 5 & ms_surface_summary$MaxInterestRate <=15] <- 'Social Investment' 
+# 
+# ms_surface_summary$LoanType[ms_surface_summary$MaxInterestRate > 15] <- 'Commercial' 
+# 
+# 
+# # Multispecies Opt and Static Plots ------------------------------------------------------
+# 
+# OptRun<- filter(ms_ReserveResults,BestRun == T)
+# 
+# grid_SimpleTheme <- SimpleTheme+theme(text = element_text(size = 8), 
+#                                       legend.key.size = unit(.5,'cm'))
+# 
+# msopt_npb_plot <- opt_npb_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
+# 
+# ggsave(file=paste(BatchFolder,'Multispecies Optimal NPB Trajectory.pdf',sep=''),plot=msopt_npb_plot,width=fig_width,height=fig_height)
+# 
+# ms_StaticReserve <- filter(ms_ReserveResults, Year == max(Year) & Intercept == 0 & Slope == 0)
+# 
+# ms_StaticSummary <- filter(ms_ResSummary, Intercept == 0 & Slope == 0)
+# 
+# msstatic_NPB_plot <- static_NPB_plot_fun(PlotData = ms_StaticSummary, Theme = grid_SimpleTheme)
+# 
+# ggsave(file = paste(BatchFolder,'Multispecies Static NPB.pdf',sep = ''),plot = msstatic_NPB_plot,width = fig_width,height = fig_height)
+# 
+# msstatic_netbenefit_plot <- static_netbenefit_plot_fun(PlotData = ms_StaticSummary, Theme = grid_SimpleTheme)
+# 
+# ggsave(file = paste(BatchFolder,'Multispecies Static Years to Net Benefit.pdf',sep = ''),plot = msstatic_netbenefit_plot,width = fig_width,height = fig_height)
+# 
+# msstatic__priceinc_plot <- static__priceinc_plot_fun(PlotData = ms_StaticSummary, Theme = grid_SimpleTheme)
+# 
+# ggsave(file = paste(BatchFolder,'Static Price Increase Needed.pdf',sep = ''),plot = static__priceinc_plot,width = fig_width,height = fig_height)
+# 
+# ms_StaticSummary$LoanType[ms_StaticSummary$MaxInterestRate <= 5] <- 'Philanthropy' 
+# 
+# ms_StaticSummary$LoanType[ms_StaticSummary$MaxInterestRate > 5 & ms_StaticSummary$MaxInterestRate <=15] <- 'Social Investment' 
+# 
+# ms_StaticSummary$LoanType[ms_StaticSummary$MaxInterestRate > 15] <- 'Commercial' 
+# 
+# msstatic__maxinterest_plot <- static__maxinterest_plot_fun(PlotData = ms_StaticSummary, Theme = grid_SimpleTheme)
+# 
+# ggsave(file = paste(BatchFolder,'Multispecies Static Interest Rate Possible.pdf',sep = ''),plot = msstatic__maxinterest_plot,width = fig_width,height = fig_height)
+# 
+# MultiSpecies_StaticPlots_plot <- arrangeGrob(msstatic_NPB_plot,msstatic_netbenefit_plot, msstatic__priceinc_plot, msstatic__maxinterest_plot, nrow = 2, ncol =2)
+# 
+# 
+# # Multispecies Surface Plots ----------------------------------------------
+# 
+# msnpb_surface_plot <- npb_surface_plot_fun(PlotData = ms_surface_results, Theme = grid_SimpleTheme)
+# 
+# ggsave(file=paste(BatchFolder,'Multispecies NPB Surface.pdf',sep=''),plot = msnpb_surface_plot, height = fig_height, width = fig_width)
+# 
+# mspriceinc_surface_plot <- priceinc_surface_plot_fun(PlotData = ms_surface_summary, Theme = grid_SimpleTheme)
+# 
+# ggsave(file=paste(BatchFolder,'Multispecies Prince Inc Surface.pdf',sep=''),plot = mspriceinc_surface_plot, height = fig_height, width = fig_width)
+# 
+# msloantype_surface_plot <- loantype_surface_plot_fun(PlotData = ms_surface_summary, Theme = grid_SimpleTheme)
+# 
+# ggsave(file=paste(BatchFolder,'Multispecies Loan Type Surface.pdf',sep=''),plot = msloantype_surface_plot, height = fig_height, width = fig_width)
+# 
+# MultiSpecies_surface_plot <- arrangeGrob(msnpb_surface_plot, mspriceinc_surface_plot, msloantype_surface_plot, nrow = 2, ncol =2)
 
 save(file = paste(BatchFolder,'NutsPlots.Rdata',sep = ''),list=ls(pattern = '_plot'))
 

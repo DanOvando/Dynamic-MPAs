@@ -26,14 +26,13 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
     ungroup() %>%
     group_by(Run) %>%
     arrange(Year) %>%
-    mutate(net_yields = cumsum(Yield), s_NPY=cumsum(s_PresentYield),s_Balance=(Yield/SQYield),
+    mutate(net_yields = cumsum(Yield), net_biomass = cumsum(Biomass), s_NPY=cumsum(s_PresentYield),s_Balance=(Yield/SQYield),
            s_NPB=cumsum(s_Balance*(1+Fleet$YieldDisc)^-(Year-1))) %>%
     ungroup() %>%
     group_by(Species) %>%
-    mutate(Utility = long_term_objective * (net_yields / max(net_yields)) + (1 - long_term_objective) * (NPY/max(NPY)) ) %>%
+#     mutate(Utility = long_term_objective * (net_yields / max(net_yields)) + (1 - long_term_objective) * (NPY/max(NPY)) ) %>%
+    mutate(Utility = long_term_objective * (net_biomass / max(net_biomass)) + (1 - long_term_objective) * (NPY/max(NPY)) ) %>%
     ungroup()
-  
-  
   
   OptimalRun<- filter(ReserveResults,Year==max(Year)) %>%
     group_by(Species) %>%
@@ -61,8 +60,10 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
               ReserveSize = mean(FinalReserve), 
               Intercept = mean(Intercept), 
               Slope = mean(Slope),
-              NegativeYields = Discount(pmin(0,YieldBalance),0,length(YieldBalance))$NPV,
-              StatusQuoYields = Discount(SQYield * (YieldBalance <= 0),0,length(YieldBalance))$NPV,
+              #               NegativeYields = Discount(pmin(0,YieldBalance),0,length(YieldBalance))$NPV,
+              NegativeYields = min(pmin(0,YieldBalance)),
+              StatusQuoYields = mean(SQYield),
+              #               StatusQuoYields = Discount(SQYield * (YieldBalance <= 0),0,length(YieldBalance))$NPV,
               PriceInc = 100 * (StatusQuoYields / (StatusQuoYields + NegativeYields) - 1),
               AvailableSurplus = Discount(pmax(0, YieldBalance),0,length(YieldBalance))$NPV,
               LoanNegativeYields = Discount(pmin(0,YieldBalance[1:LoanTime]),0,length(YieldBalance[1:LoanTime]))$NPV,
@@ -81,9 +82,9 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
   
   SpeciesList<- unique(ReserveResults$Species)
   
-  species_comparison<- as.data.frame(matrix(NA,nrow=length(SpeciesList)*length(SpeciesList),ncol=7))
+  species_comparison<- as.data.frame(matrix(NA,nrow=length(SpeciesList)*length(SpeciesList),ncol=8))
   
-  colnames(species_comparison)<- c('Species1','Species2','NPB','Utility','TimeToNPB','PrinceInc','MaxInterestRate')
+  colnames(species_comparison)<- c('Species1','Species2','NPB','Utility','TimeToNPB','PrinceInc','MaxInterestRate','ReserveStrategy')
   
   cc <- 0
   
@@ -106,7 +107,9 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
                                            ResSummary$FinalUtility[Where2],
                                            ResSummary$TimeToNPB[Where2], 
                                            ResSummary$PriceInc[Where2], 
-                                           ResSummary$MaxInterestRate[Where2],stringsAsFactors = F)
+                                           ResSummary$MaxInterestRate[Where2],
+                                           species_opt_res,
+                                             stringsAsFactors = F)
       
     }
   }
