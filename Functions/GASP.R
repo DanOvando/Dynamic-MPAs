@@ -589,7 +589,6 @@ MoveEggs<- function(NumberOfEggs,PoolType)
 
 MoveAdults<- function(NatAge,Distance,MoveType,MovementArray) ### Work in progress, place holder for adult movement
 {
-  
   #   NatAge<- FinalNumAtAge
   #   MoveType<- '2D'
   #   Distance<- 0.9
@@ -1154,12 +1153,14 @@ FindMPATrajectory<- function(OptVector,TimeFrame,FTemp,FleetSpill,FleetDiscount,
 }
 
 
-FindMaxInterestRate<- function(InterestRate,LoanTime,LoanAmount,Surplus)
+FindMaxInterestRate<- function(InterestRate,LoanTime,LoanAmount,Surplus,DiscountRate = 0, PaymentsPerYear = 1)
 {
   
   InterestRate<- exp(InterestRate)
   
-  LoanPayments<- colSums(((1+Fleet$YieldDiscount)^-(0:(LoanTime-1))) %*% t(LoanPayment(LoanAmount,InterestRate,LoanTime,1)))
+  Time <- seq(0,LoanTime-1, by = 1/PaymentsPerYear)
+  
+  LoanPayments<- colSums(((1+DiscountRate)^-(Time)) %*% t(LoanPayment(LoanAmount,InterestRate,LoanTime,ppyear = PaymentsPerYear)))
   
   LoanAdjustedBalance<- Surplus-LoanPayments
   

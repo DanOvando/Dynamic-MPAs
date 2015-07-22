@@ -1,4 +1,4 @@
-ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
+ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,npb_focus)
 {
   
   if (Scale_Yields == T)
@@ -19,7 +19,7 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
     group_by(Run) %>% 
     arrange(Year) %>%
     mutate(PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1)) %>%
-    mutate(NPB=cumsum(PresentBalance),NPY=cumsum(PresentYield),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>%
+    mutate(NPB=cumsum(PresentBalance),NB = cumsum(YieldBalance), NPY=cumsum(PresentYield),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>%
     ungroup() %>%
     group_by(Species) %>% 
     mutate(s_Yield = Yield/max(Yield,na.rm=T),s_PresentYield=s_Yield*(1+Fleet$YieldDisc)^-(Year-1)) %>%
@@ -31,7 +31,7 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
     ungroup() %>%
     group_by(Species) %>%
 #     mutate(Utility = long_term_objective * (net_yields / max(net_yields)) + (1 - long_term_objective) * (NPY/max(NPY)) ) %>%
-    mutate(Utility = long_term_objective * (net_biomass / max(net_biomass)) + (1 - long_term_objective) * (NPY/max(NPY)) ) %>%
+    mutate(Utility = (1-npb_focus) * (net_biomass / max(net_biomass)) + (npb_focus) * (NPY/max(NPY)) ) %>%
     ungroup()
   
   OptimalRun<- filter(ReserveResults,Year==max(Year)) %>%
@@ -49,13 +49,15 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
   ReserveResults$BestUnifiedRun <- ReserveResults$Scenario %in% BestUnifiedScenario
   
   ReserveResults$BestRun <- ReserveResults$Run %in% OptimalRun$OptUtility
-  
-  ResSummary <- ReserveResults %>%
+
+    ResSummary <- ReserveResults %>%
     group_by(Run) %>%
     summarize(TimeToNPB = which(NPB >= 0)[1],
               Species = unique(Species), 
               BestRun = unique(BestRun), 
               FinalNPB = last(NPB),
+              FinalNB = last(NB),
+              TimeToNB = which(NB >= 0)[1],
               FinalUtility = last(Utility), 
               ReserveSize = mean(FinalReserve), 
               Intercept = mean(Intercept), 
@@ -96,6 +98,8 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
     
     species_opt_res<- ResSummary$RunDescription[Where]
     
+    FinalRes <- paste(100*ResSummary$ReserveSize[Where],'%', sep = '')
+    
     for (j in 1:length(SpeciesList))
     {
       cc <- cc+1
@@ -108,7 +112,7 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,long_term_objective)
                                            ResSummary$TimeToNPB[Where2], 
                                            ResSummary$PriceInc[Where2], 
                                            ResSummary$MaxInterestRate[Where2],
-                                           species_opt_res,
+                                           FinalRes,
                                              stringsAsFactors = F)
       
     }

@@ -22,6 +22,7 @@ sapply(list.files(pattern = "[.]R$", path = "Functions", full.names = TRUE), sou
 
 source('BetterNutzControlfile.R')
 
+
 PopTolerance <- 1 #the cutoff for identifying point where population stops changing
 NumCores<- 2
 InitialPopulation <- 1000 #Seed for initial population 
@@ -30,26 +31,28 @@ LookAtLengths <- 0
 ReservePosition <- 'Center'
 OptTime <- 50 #Time Horizon to optimize over
 Alpha <- 0.5
+
+Font <- 'Helvetica'
 fig_width <- 6
 fig_height <- 4
-text_size <- 14
+text_size <- 12
 TimeToRun <- OptTime + 1
 LoanTime <- 11
 DiscRates <- 0.1
 
 BasePatches <- Patches
 
-BatchFolder <- 'Results/Scratch/'
+BatchFolder <- 'Results/Full Grid 2.2/'
 
-RunAnalysis <- TRUE
+RunAnalysis <- FALSE
 
 OptMode <- 'Utility'
 
 Scale_Yields <- T
 
-long_term_objective <- 0.25 # 0 to 1, 0 means optimal reserve defined by NPB, 1 by total yields (i.e. discount = 0)
+npb_focus <- .9 # 0 to 1, 0 means optimal reserve defined by NPB, 1 by total yields (i.e. discount = 0)
 
-discount_rate <- .1
+discount_rate <- .2
 
 fixed_slope <- 0.2
 
@@ -60,8 +63,6 @@ LifeHistories <- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors = F)
 LifeColumns <- colnames(LifeHistories)
 
 LifeVars <- c('Range','MaxAge','m','k','Linf','t0','AgeMa50','LengthMa50','MaturityMode','BH.Steepness','wa','wb','WeightForm','fa','fb','DDForm')
-
-
 
 if (RunAnalysis == TRUE) {
   
@@ -92,7 +93,6 @@ if (RunAnalysis == TRUE) {
   
   Populations<- sapply(gsub(' ','',SpeciesList,fixed = T),TargetPop=0.25,PreparePopulations,LifeHistories=LifeHistories,BaseLife=lh,LifeVars = LifeVars,BasePatches = BasePatches,BatchFolder = BatchFolder,USE.NAMES = T)
   
-  browser()
   #   Rprof(tmp <- tempfile(),line.profiling=T)
   #   
   #   BatTargetPopulation<- GrowPopulation(100, 0,'EQ',0,'BatTarget Run',Species='Yellowtail Snapper',lh=Populations$YellowtailSnapper,Patches=Patches,FigureFolder=FigureFolder)
@@ -146,6 +146,7 @@ if (RunAnalysis==F)
   load(file = paste(BatchFolder,'Reserve Results.Rdata'))
 }
 
+
 # Prepare Figure Themes ---------------------------------------------------
 # text_size <- 9
 
@@ -165,6 +166,7 @@ PaperTheme <- theme(legend.position = 'top',text = element_text(size= 22,family=
                     legend.text = element_text(size = 14,color = 'black'),legend.title = element_text(size = 16,color = 'black'))
 
 SimpleTheme <- theme(legend.position = 'top',text = element_text(size = text_size,family = Font,color = FontColor),
+                     axis.text.x = element_text(size = 9, angle = 35, vjust = 0.9, hjust = 0.9),
                      panel.background =  element_rect(fill = "white", colour = NA),
                      panel.border =      element_rect(fill = NA, colour = "grey50"), 
                      panel.grid.major =  element_line(colour = "grey60", size = 0.2),
@@ -174,7 +176,7 @@ SimpleTheme <- theme(legend.position = 'top',text = element_text(size = text_siz
 
 Fleet$YieldDiscount <- discount_rate
 
-ProcessedNuts <- ProcessNuts(ReserveResults = ReserveResults, Fleet = Fleet, Scale_Yields = Scale_Yields, long_term_objective = long_term_objective)
+ProcessedNuts <- ProcessNuts(ReserveResults = ReserveResults, Fleet = Fleet, Scale_Yields = Scale_Yields, npb_focus = npb_focus)
 
 ReserveResults <- ProcessedNuts$ReserveResults
 
@@ -215,9 +217,9 @@ ggsave(file = paste(BatchFolder,'Opt Species Comparison.pdf',sep = ''),plot = sp
 
 # Different Discount Rates ------------------------------------------------
 
-Discounts <- c(0,0.1,0.2)
+Discounts <- c(0,0.05,0.2)
 
-Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = ReserveResults, Alpha = 0 ) %>% ldply()
+Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = ReserveResults, npb_focus = 1) %>% ldply()
 
 discount_rate_plot <- discount_npb_plot_fun(filter(Opt_by_Discount, Species == 'Yellowtail Snapper'), SimpleTheme)
 
@@ -233,6 +235,20 @@ static_NPB_plot <- static_NPB_plot_fun(PlotData = StaticSummary, Theme = SimpleT
 
 ggsave(file = paste(BatchFolder,'Static NPB.pdf',sep = ''),plot = static_NPB_plot,width = fig_width,height = fig_height)
 
+static_NB_plot <- static_NB_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
+
+ggsave(file = paste(BatchFolder,'Static NB.pdf',sep = ''),plot = static_NB_plot,width = fig_width,height = fig_height)
+
+static_NB2_plot <- static_NB2_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
+
+ggsave(file = paste(BatchFolder,'Static NB2.pdf',sep = ''),plot = static_NB2_plot,width = fig_width,height = fig_height)
+
+
+static_comp_plot <- static_comp_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme, DiscRate = Fleet$YieldDiscount)
+
+ggsave(file = paste(BatchFolder,'Static Comp Plot.pdf',sep = ''),plot = static_comp_plot,width = fig_width,height = fig_height)
+
+static_nb_v_npb_plot <- arrangeGrob(static_NPB_plot, static_NB_plot + theme(legend.position = 'none'), nrow = 1, ncol =2)
 
 static_netbenefit_plot <- static_netbenefit_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
 
@@ -305,8 +321,10 @@ multispecies <- ReserveResults %>%
     Intercept = mean(Intercept), 
     Slope = mean(Slope))
 
+save(file = paste(BatchFolder,'NutsPlots.Rdata',sep = ''),list=c('SimpleTheme',ls(pattern = '_plot')))
 
-# multispecies_nuts <- ProcessNuts(ReserveResults = multispecies, Fleet = Fleet, Scale_Yields = Scale_Yields, long_term_objective = long_term_objective)
+
+# multispecies_nuts <- ProcessNuts(ReserveResults = multispecies, Fleet = Fleet, Scale_Yields = Scale_Yields, npb_focus = npb_focus)
 # 
 # ms_ReserveResults <- multispecies_nuts$ReserveResults
 # 
@@ -380,6 +398,4 @@ multispecies <- ReserveResults %>%
 # ggsave(file=paste(BatchFolder,'Multispecies Loan Type Surface.pdf',sep=''),plot = msloantype_surface_plot, height = fig_height, width = fig_width)
 # 
 # MultiSpecies_surface_plot <- arrangeGrob(msnpb_surface_plot, mspriceinc_surface_plot, msloantype_surface_plot, nrow = 2, ncol =2)
-
-save(file = paste(BatchFolder,'NutsPlots.Rdata',sep = ''),list=ls(pattern = '_plot'))
 
