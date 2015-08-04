@@ -1279,7 +1279,6 @@ DistFleet<- function(FishingAtAge,SelectivityAtAge,NumAtAge,lh,Patches)
   
   if (sum(Patches$MPALocations)>0)
   {
-    
     FishingAtSpace<- t(t(FishingAtAge) *  (ProportionalBiomass/max(ProportionalBiomass)))
   }
   else {FishingAtSpace<- FishingAtAge}

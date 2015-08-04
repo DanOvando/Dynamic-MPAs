@@ -8,7 +8,7 @@ static_NPB_plot_fun <- function(PlotData,Theme)
   static_NPB_plot <- (ggplot(data = PlotData  ,
                              aes(x = ReserveSize,y = FinalNPB,fill = FinalNB)) +
                         geom_bar(stat = 'identity', position = 'dodge', color = 'black', alpha = 0.85) +
-                        geom_point(aes(size = TimeToNPB), shape = 21, fill = 'black', alpha = 0.85) +
+                        geom_point(aes(size = TimeToNPB), shape = 21, fill = 'grey71', alpha = 0.7) +
                         scale_size_continuous(breaks = Breaks, labels = c(seq(10,25,by=5),'>30'), name = 'Years to NPB>0') + 
                         facet_wrap(~Species,scales = 'fixed') + 
                         geom_hline(aes(yintercept = 0), linetype = 'longdash') + 
@@ -19,6 +19,6 @@ static_NPB_plot_fun <- function(PlotData,Theme)
                         ylab('NPB') +
                         scale_x_continuous(labels = percent) + 
                         Theme + 
-                        theme(legend.position = 'top'))
+                        theme(legend.position = 'top', legend.text = element_text(size = 6)))
   return(static_NPB_plot) 
 }
