@@ -190,7 +190,7 @@ OptRun <- filter(ReserveResults,BestRun == T)
 
 opt_npb_plot <- opt_npb_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
-ggsave(file=paste(BatchFolder,'Optimal NPB Trajectory.pdf',sep=''),plot=opt_npb_plot,width=fig_width,height=fig_height)
+ggsave(file=paste(BatchFolder,'Optimal NPB Trajectory.pdf',sep=''),plot=opt_npb_plot,width=8,height=6)
 
 opt_biomass_plot <- opt_biomass_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
@@ -219,7 +219,8 @@ ggsave(file = paste(BatchFolder,'Opt Species Comparison.pdf',sep = ''),plot = sp
 
 Discounts <- c(0,0.05,0.2)
 
-Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = ReserveResults, npb_focus = 1) %>% ldply()
+Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = subset(ReserveResults, Intercept == 0 & Slope ==0)
+                          , npb_focus = 1) %>% ldply()
 
 discount_rate_plot <- discount_npb_plot_fun(filter(Opt_by_Discount, Species == 'Yellowtail Snapper'), SimpleTheme)
 
@@ -233,7 +234,7 @@ StaticSummary <- filter(ResSummary, Intercept == 0 & Slope == 0)
 
 static_NPB_plot <- static_NPB_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
 
-ggsave(file = paste(BatchFolder,'Static NPB.pdf',sep = ''),plot = static_NPB_plot,width = fig_width,height = fig_height)
+ggsave(file = paste(BatchFolder,'Static NPB.pdf',sep = ''),plot = static_NPB_plot,width = fig_width,height = 6)
 
 static_NB_plot <- static_NB_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
 
@@ -258,11 +259,11 @@ static__priceinc_plot <- static__priceinc_plot_fun(PlotData = StaticSummary, The
 
 ggsave(file = paste(BatchFolder,'Static Price Increase Needed.pdf',sep = ''),plot = static__priceinc_plot,width = fig_width,height = fig_height)
 
-StaticSummary$LoanType[StaticSummary$MaxInterestRate <= 5] <- 'Philanthropy' 
+StaticSummary$LoanType[StaticSummary$MaxInterestRate <= 1] <- 'Philanthropy' 
 
-StaticSummary$LoanType[StaticSummary$MaxInterestRate > 5 & StaticSummary$MaxInterestRate <=15] <- 'Social Investment' 
+StaticSummary$LoanType[StaticSummary$MaxInterestRate > 1 & StaticSummary$MaxInterestRate <=5] <- 'Social Investment' 
 
-StaticSummary$LoanType[StaticSummary$MaxInterestRate > 15] <- 'Commercial' 
+StaticSummary$LoanType[StaticSummary$MaxInterestRate > 5] <- 'Commercial' 
 
 static__maxinterest_plot <- static__maxinterest_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
 

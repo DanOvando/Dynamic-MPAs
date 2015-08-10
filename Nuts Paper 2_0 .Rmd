@@ -1,0 +1,404 @@
+---
+title: "Solutions to the Short-Term Economic Impacts of Marine Reserves"
+author: "Dan Ovando, Dawn Dougherty, Jono Wilson"
+date: "July 9, 2015"
+output:
+  word_document:
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 6
+  pdf_document:
+    fig_caption: yes
+    fig_height: 5
+    fig_width: 6
+  html_document:
+    fig_align: center
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 8
+header-includes:
+- \usepackage{setspace}
+- \doublespacing
+- \usepackage{lineno}
+- \linenumbers
+number_sections: yes
+csl: fish-and-fisheries.csl
+bibliography: MPA Benefits.bib
+toc: yes
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE)
+```
+```{r}
+library(gridExtra)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+ModelRun <- 'Full Grid 2.2 BvBmsy _15'
+
+load(paste('Results/',ModelRun,'/NutsPlots.Rdata',sep = ''))
+
+#####Example Shrinking NUTZ concept
+
+CartoonPlot<- function(Theme)
+{
+
+r=0.24
+K=100
+Nvec=NA
+Nvec[1]=K
+u1=0.16
+u2=0.12
+yvec=NA
+
+for(t in 2:150){
+  if(t<100)u=u1 else u=u2
+  Nvec[t]=Nvec[t-1]+r*Nvec[t-1]*(1-Nvec[t-1]/K)-u*Nvec[t-1]
+  yvec[t-1]=u*Nvec[t-1]
+
+  }
+
+
+
+Years=1:149
+Nvec=Nvec[1:149]
+Yield=(yvec-yvec[98])/max(yvec)                 #creat standardized deviations from status quo
+Biomass=(Nvec-Nvec[98])/max(Nvec)
+dat=data.frame(Years,Biomass,Yield)
+
+datA=subset(dat,Years>90 & Years<=149)
+ datA$Years=-7:51
+ 
+ datA$Balance=cumsum(datA$Yield)
+
+#find year balance is positive for shaded area cutoff
+test=subset(datA,Years>0)
+test$flag=0
+test$flag[test$Balance>0]=1
+test$dup=duplicated(test$flag)
+breakeven=which(test$dup==FALSE)[2]
+breakYear=test$Years[breakeven]
+
+#long format
+longdat <- reshape(datA[,1:3], 
+  varying = c("Biomass","Yield"), 
+  v.names = "value",
+  timevar = "Objectives", 
+  times = c("Biomass","Yield"), 
+  direction = "long")
+
+ 
+
+
+p <- ggplot(longdat, aes(x=Years,y=value))
+
+# p + geom_area(data=subset(longdat,Years<=12 & Objectives=="Yield"),  fill="darkorange")+ geom_area(data=subset(longdat,Years>=12 &Years<=breakYear& Objectives=="Yield"),  fill="cornflowerblue")+ geom_line(aes(colour=Objectives),size=1.1)+ geom_vline(xintercept = 30,linetype=2) + scale_color_manual(values=c("aquamarine3", "black"))  + ylab("Deviation from Status Quo")  + scale_x_discrete(breaks=c(0,30),labels=c("0","Yield Balance"))     + scale_y_continuous(limits=c(-0.1, 0.2),breaks=0) + Theme
+
+
+p + geom_area(data=subset(longdat,Years<=12 & Objectives=="Yield"),  fill="grey26")+ geom_area(data=subset(longdat,Years>=12 &Years<=breakYear& Objectives=="Yield"),  fill="grey68")+ geom_line(aes(linetype=Objectives),size=1.1)+ geom_vline(xintercept = 30,linetype=2) + scale_color_manual(values=c("black", "black"))  + ylab("Deviation from Status Quo")  + scale_x_discrete(breaks=c(0,30),labels=c("0","Yield Balance"))     + scale_y_continuous(limits=c(-0.1, 0.2),breaks=0) + Theme
+
+
+
+}
+
+
+```
+
+# Cover Letter
+
+Dear Editor, 
+
+The extensive debate on when and if no-take marine reserves can benefit fisheries has centered around long-term economic effects. Very little work has considered the economic impacts of reserves over time frames that matter more to communities and decision makers. Our paper, *Solutions to the Short-Term Economic Impacts of Marine Reserves", builds from the existing literature on marine reserves to advance our understanding of how reserves affect fisheries profits over time, and to what extent design and financial instruments can offset economic losses. 
+
+We find that a decade or much more is often needed for a community to see a net economic benefit from implementing a marine reserve, even if the eventual benefits are very large. Careful design of the reserve can help offset early losses, but financial strategies such as improving the value of the catch show much more promise. Our results provide a novel consideration of the ways in which reserves affect fishing communities over the short-term, and show that economic tools may be the future for resolving those losses. 
+
+Our paper suggests a framework for assessing and communicating the economic effects of no-take marine reserves on fisheries. The case studies included provide a "best-case scenario" against which to assess the likely fishery impacts of reserves in other locations. Marine reserves can have substantial benefits to conservation and fisheries, but overlooking the short-term economic impacts is both misleading to fishing communities and detrimental to conservation in the long-run. Our goal is for this paper to shift the discussion of marine reserves as fishery management tools towards the challenges and solutions for the short-term economic impacts. Given its integration and advancement on a broad literature, novel findings, and wide scope, we feel that this paper is an ideal candidate for publication in Fish and Fisheries. 
+
+Thank you for your consideration, 
+
+Dan Ovando
+
+
+# Abstract
+
+Well-managed fisheries are critical for supporting healthy ocean ecosystems, coastal livelihoods, and food security for millions of people. Many communities lack the resources to implement effective fisheries management. No-take marine reserves are a relatively simple tool to conserve biodiversity and potentially provide fishery benefits. While the biological and long-term economic effects of reserves on fisheries have been well studied, the short-term economic impacts of establishing marine reserves are rarely considered. In this paper we demonstrate the use of a novel metric that discounts future benefits from marine reserves in order to explore mechanisms for overcoming short term economic losses from marine reserves. We simulate fisheries for six species commonly caught in coastal fisheries and show that while conservation benefits accrue rapidly; more than a decade is often required to provide net fisheries benefits, even under circumstances favorable for reserves. We explore a suite of strategies for mitigating these short-term economic losses, including flexible reserve designs, loans, and value increases. Our results indicate that reserves may struggle to provide short-term economic benefits to artisanal fisheries, and ex-vessel seafood value increases show the most potential for offsetting economic losses. Our findings highlight the importance of understanding and communicating likely outcomes from marine reserve implementation and ways to overcome short-term losses. 
+
+# Introduction
+
+
+More than 260 million people across the globe earn their livelihood in fishing related industries (Teh et al. 2014). Fish is a primary source of protein to over one billion people [@FAO2011]. Yet the sustainability of the fishing industry and the potential for wild capture fisheries to feed a growing population is dependent on the implementation and enforcement of effective systems of governance and management. No-take marine reserves (hereafter reserves) are areas set off-limits to fishing, and are a widely used tool for protecting fish populations and maintaining ecosystem services to coastal environments. Benefits of marine reserves include the maintenance of spatial population structure of fish stocks [@Berkeley2004; @White2008; @Rassweiler2012], protection of essential fish habitat, increased species diversity and fish biomass [@Lester2009], a buffer against changes in environmental conditions [@Stefansson2005; @Costello2008]. Reserves can also serve as reference areas to set local management regulations and disentangle the effects of fishing from environmental variability [@Wilson2014]. Enhanced biological production inside reserves can benefit adjacent fisheries through adult spillover [@Roberts1991; @Allison1998; @McClanahan2008] and larval export ([@Cudney-Bueno2009; @Pelc2010], especially in situations where the size of the reserve is larger than the adult home range size, and smaller than the scale of larval dispersal [@Gerber2003].
+
+Marine reserves can serve as a mechanism for simultaneously achieving conservation outcomes and improving the productivity of fisheries [@Gaines2010; @Hilborn2006]. However, the ability of marine reserves to serve this dual role is dependent on a suite of factors, including the source sink dynamics of the stock, the size of reserve relative to the home range size of the species, the dispersal potential of the species, the geographic extent of the stock, as well as the status of the fishery prior to implementation of reserves [@Sanchirico2001; @Costello2008; @White2008; @Rassweiler2012; @Sanchirico2006; @Smith2003]. Moreover, the implementation of marine reserves necessarily reduces the spatial extent of the fishery, often limiting take in prime fishing grounds and concentrating effort into areas where fishing is still allowed [@Halpern2004]. 
+
+The challenges of utilizing reserves as fishery management tools have been well studied [@Hilborn2004]. However, there is a critical gap in the understanding of  economic effects of reserves over time. Nearly all of the published research on the topic has considered the long-term (or equilibrium) economic impacts of implementing a reserve. Short-term losses in yields can have profound implications on the financial health and food security of fishing communities. Depending on the time horizon that a community is able or willing to consider, a reserve that provides long-term fishery benefits may cause severe hardship in the short-term, thus providing little practical benefit to today's fishers and decision makers. Such impacts influence local support and buy-in for enforcement policies, trust in management agencies and supporting organizations, and ultimately the sustainability of the fishery itself.
+
+Tradeoffs between the short and long term economic impacts of reserves can potentially be mitigated through optimizing reserve design scenarios [@Brown2014], including proper siting as well as flexibility in the size and scope of reserve configurations over time. Proper design is also crucial for achieving long-term ecological and economic objectives [@Rassweiler2012]. However, such considerations require knowledge of the local oceanography and fishery dynamics that often elude managers of fisheries for which reserves are being considered. If reserves are to be implemented as conservation tools for fisheries lacking resources and capacity to design optimal reserve configurations, then an additional consideration must include a means to offset economic losses in the short-term
+
+In this paper we develop a spatial bioeconomic simulation model that considers flexible reserve designs and two financial strategies to offset reserve-induced economic losses over the short-term: 1) financial loans and 2) increases in the ex-vessel price paid to fishermen. We focus our efforts on simulating a small-scale, semi-artisanal fishery targeting a variety of tropical reef finfish. Small-scale fisheries throughout the developing tropics are often considered as sites for reserve-based management due to their limited capacity for more involved fishery management practices such as quotas, effort controls and gear restrictions. As such, insights into how to offset short-term economic losses of reserve implementation will have profound impacts on achieving the dual objectives of fisheries yield and conservation in situations where the capacity and resources for alternative management regimes are lacking.
+
+We set out to understand feasible mechanisms for offsetting the short-term economic losses of implementation of marine reserves. In the following sections, we describe the population model and the fishery dynamics of our simulated fishery. We then address a series of questions following a line of inquiry centered on the following hypotheses:
+ 
+ 1)	short-term economic losses from marine reserve implementation are fundamentally shaped by the discount rate applied to a fisher or a fishing community
+ 2)	Flexible reserve designs that allow for expansion or contraction of reserve size can offset economic losses
+ 3)	Financial mechanisms such as loans or increases in ex-vessel prices can reduce short-term economic losses from marine reserve implementation
+
+# Operating Model
+
+## Population Model
+
+We model 6 different finfish species, representing a range of life-history traits of species often targeted by tropical developing country fisheries (Table.1). Our model is single species, age-structured, and is closed to larval and adult emigration and immigration. The spatial configuration of the fishery includes 100 unique patches with wrapped edges connected by larval and adult movement. The model tracks stock numbers, biomass, and fishery yields over time. This structure best represents a small-scale fishing community on an island or isolated stretch of coastline. 
+
+Life history values were drawn from stock assessments where possible, in order to help ensure reliable and consistent values (Table.1). The recruitment model (or the functional form of the density dependence relationship) was selected from the possible structures outlined in Babcock & MacCall [-@Babcock2011] using expert judgment.  Adult movement (*Range*) is parameterized by defining the number of patches moved by adults in a time step, with 100% indicating total mixing and 0% a completely sedentary species. 
+
+```{r}
+
+LifeHistories <- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors = F)
+
+LifeVars <- c('CommName','SciName','Range','m','k','Linf','t0','AgeMa50','LengthMa50','BH.Steepness','DDForm','Source')
+
+LifeTable <- LifeHistories[, LifeVars] %>%
+  rename(Species = CommName, Sci.Name = SciName,h = BH.Steepness,Age50 = AgeMa50, Len50 = LengthMa50,DD = DDForm)
+
+
+LifeTable$DD[LifeTable$DD == 'Babcock1'] <- 'I'
+
+LifeTable$DD[LifeTable$DD == 'Babcock2'] <- 'II'
+
+LifeTable$DD[LifeTable$DD == 'Babcock3'] <- 'III'
+
+LifeTable$DD[LifeTable$DD == 'Babcock4'] <- 'IV'
+
+LifeTable$DD[LifeTable$DD == 'Babcock5'] <- 'V'
+
+LifeTable$DD[LifeTable$DD == 'Shark'] <- 'I'
+
+LifeTable$DD <- paste(LifeTable$DD, '*',sep = '')
+
+# LifeTable <- LifeTable %>% 
+#   rename('Recruitment Model' = DDForm)
+
+LifeTable$Range <- paste(100*LifeTable$Range, '%',sep = '')
+
+LifeTable$Range <- paste(LifeTable$Range, '*',sep = '')
+
+```
+
+The number of fish in patch i at age a at the beginning of year t+1 is
+
+(1) $N_{i,a,t+1} = R_{i,t+1}$ if *a = 0*
+
+(2) $N_{i,a,t+1} = N_{i,a-1,t}e^{-M-F_{i,t}\upsilon_{a-1}}$  if $1 \leq a < x$
+
+(3) $N_{i,a,t+1} = N_{i,x-1,t}e^{-M-F_{i,t}\upsilon_{x-1}} + N_{i,x,t}e^{-M-F_{i,t}\upsilon_{x}}$  if $a = x$
+
+where *R~i,t~*is the recruitment in patch *i* in year *t*, *F~i,t~* is the instantaneous fishing mortality in patch *i* in year *t*, $\upsilon_{a}$ is the selectivity of the fishing gear for a fish at age *a* (which we assume to be 1 for all ages),  *M* is the instantaneous natural mortality, and *x* is the maximum age recorded in the model (the plus group). This model assumes that the biological parameters of each species are homogeneous across space and time.
+
+The simulations begin at an unfished equilibrium using a specified unfished initial recruitment in each patch *i*, *R~i,0~* such that
+
+(4) $N_{i,a} = R_{i,0}$ if *a = 0*
+
+(5) $N_{i,a} = N_{i,a-1}e^{-M}$  if $1 \leq a < x$
+
+(6) $N_{i,a} = \frac{N_{i,x-1}e^{-M}}{1-e^{-M}}$  if $a = x$
+
+The population is then fished down at a specified open access harvest rate in both patches to equilibrium conditions. We set this rate such that biomass relative to biomass at maximum sustainable yield (B/B~MSY~) is equal to 0.15 at equilibrium, representing an overfished stock. Starting from this overfished state provides an optimistic estimation of the potential fishery benefits of reserve formation.  
+
+The average length (*l~a~*) of fish in each age class is calculated using a von Bertalanffy growth equation
+
+(7) $l_{a} = L_{inf}(1-e^{-k(t-t_{0})})$
+
+and then converted to average weight (*w~a~*) using:
+
+(8) $w_{a}=b_{1}l_{a}^{b_{2}}$
+
+We assume habitat quality to be the same in all patches.  Adult movement at each time step among the 100 patches is then calculated using a Gaussian dispersal kernel 
+
+(9) $p_{i,j}=e^{\frac{-d_{i,j}^{2} }{2\sigma_{A}^{2}}}$
+
+where *p~i,j~*  is the proportion of fish moving from area *i* to area *j*,  and *d~i,j~* is the distance between area *i* and area *j*. The model parameter $\sigma_{A}$ defines the movement range for the species, and is scaled by the *Range* parameter. We wrap movement in order to remove edge effects. The relative proportions are then normalized so that the total proportion of fish moving from area *i* to any area sum to one. The number of fish in each age group one and older after movement are then
+
+(10) $N_{i,a,t} = \sum^{100}_{j=1} N_{j,a,t}p_{i,j}$
+
+To calculate recruitment each year in each patch we use the recruitment models described in Babcock & MacCall [-@Babcock2011], in order to allow the nature of density dependence to vary among species (for example, pre or post settlement density dependence)(Table.1). 
+
+## Fishery Dynamics
+
+The catch in each patch at each time step is calculated as
+
+(11) $Y_{i,t} = \sum_{a}(N_{i,a,t}e^{-F_{i,t}\upsilon_{a}})$ 
+
+We assume a closed population of fishers, where the number of fishers does not change with the implementation of a reserve (no emigration or immigration of boats), such that the effort from the reserve area is displaced to the fished area. This is intended to reflect a subsistence style fishery, with few alternative livelihoods besides fishing. We do not explicitly model fishers or vessels, but rather fishing mortality *F*, in order to reduce model components. Fishing mortality is scaled by the relative commercial biomass,$\bar{B}_{i}$, in each patch where
+
+(12) $\bar{B}_{i}= \frac{B_{i}}{\sum_{i}B_{i}}$
+
+(13) $F_{i,t}=F_{i,pNTZ}(1+P_{NTZ})\bar{B}_{i,t}$
+
+Where *F~pNTZ~* is the total possible instantaneous fishing pressure in the patch *i* before the implementation of the reserve, and *P~NTZ~* is the fraction of patches that are in a reserve. 
+
+## Measuring Economic Impact
+
+We first explore whether the implementation of reserves creates short-term economic losses that are of considerable importance, especially when factoring in the future value of money through a discounting term. Net present balance (NPB) is our primary metric of performance to track economic gains and losses. NPB represents the present value of the cumulative yield benefits of a given reserve strategy relative to the status quo, calculated as
+
+(14) $NPB_{s} = \sum^{T}_{t=0} \frac{Y_{s,t}-Y_{q}}{(1+r)^{t}}$
+
+for any given species, where *t* is time, *Y* represents fishing yields, *s* is reserve implementation strategy, *q* is the status quo, *r* is the economic discount rate, and *T* is a specified number of years after reserve implementation in which *NPB* is calculated and compared across scenarios and species. To compare scenarios in this study, we calculate the year at which NPB surpasses zero (increased benefits have compensated for short-term losses). 
+
+NPB is an important output, since it reflects the benefits that a community today perceives they will receive over time from a given reserve strategy, relative to the benefits they would have received without the reserve. A positive NPB implies that the community perceives a net improvement in catches resulting from the reserve, whereas a negative NPB implies a net loss in catches over time resulting from the reserve. Alternatively, the yield balance that is the difference between catches with and without a given reserve in year t, may not be as meaningful to a community. For example, a one ton increase in catches at year ten, relative to the status quo, is of little value if 1,000 tons have been lost in years 1 through 9. 
+
+To illustrate this concept, consider an overfished fishery operating at equilibrium at 15% of unfished biomass. In year 1, a reserve of an arbitrary size is implemented (Fig.1). Total biomass in the system begins to increase monotonically over time. However, catches decline immediately due to the loss of fishing grounds. Yields then gradually increase as biomass in the reserve builds and larvae and adults spill out to fished areas, until eventually catches in a given year start to exceed the amount of fish caught by the community before the reserve (Fig. 1). While the community in that year is catching as many fish as they were before the reserve, the community has still lost a substantial amount of catch in the years leading up to that point (the black area, Fig. 1). It may take several more years of benefits for the increases in catches resulting from the reserve (the grey area, Fig. 1) to offset the early losses and reach an NPB greater than 0 (the dashed vertical line, Fig. 1). By focusing on NPB, this study examines the ability of reserves to provide a net perceived benefit to a community today. 
+
+
+NPB is a function of both the stream of future yields relative to the status quo and the discount rate. A discount rate of 0.05 is the default value in much of the economic literature. However, our thought experiment for this study is the management of an artisnal fishery. While few studies have actually estimated the discount rate for artisanal fishers, those that have report much higher discount rates than 0.05. Johnson & Saunders [-@Johnson2014] and Curtis [-@Curtis2002] found discount rates of artisnal fishermen of ~0.22 (mean) and ~ 0.35 (median), meaning that the fishermen in those studies value profits today much more than profits tomorrow. For these analyses we chose a discount rate of 0.2 to reflect an artisanal fishery [@Johnson2014], that still allows some preference for future benefits by the community.  
+
+## Measuring Utility
+
+Reserves often face competing objectives between long-term conservation benefits and short-term economic benefits. This can be empirically illustrated by considering the cumulative biomass of fish in the water over time with a discount rate *r* of 0 (long-term conservation planner, $B_{r_{0}}$) vs. the net present benefits of the reserve over time with a discount rate *r* > 0 (in this case we consider 0.2, $Y_{r_{0.2}}$)). In order to consider the relative utility of a given reserve strategy *s* we assign a weighting parameter $\alpha$ that can take any value from 0 to 1, such that total utility *U* is calculated as
+
+(15) $U_{s} = \alpha(\frac{Y_{r_{0.2},s}}{\sum_{s}Y_{r_{0.2},s}}) + (1-\alpha)(\frac{B_{r_{0},s}}{\sum_{s}B_{r_{0},s}})$
+
+This allows us to calculate utility focused solely on discounted fishery benefits ($\alpha$=1), long-term conservation benefits ($\alpha$=0), or any relative weighting in between). "Optimal" reserve policies are found by determining the combination of terminal reserve size, initial reserve size, and slope that maximizes utility *U*. 
+
+## Reserve Design
+
+We use the simulation model to examine how the implementation of flexible reserve designs could offset short-term economic losses. Flexible reserve designs allow for an increase or a reduction in the size of the reserve over time. We explore reserve design scenarios that are defined by a terminal reserve size (% of area in a reserve), initial size (% of the area in a reserve in year 1), and a "slope" (% of run years at which the reserve reaches terminal size). We allow the final size, initial size, and rate at which the reserve reaches its final size to vary. For any scenario a single reserve is applied as a continuous block of cells in the center of the system (alternative configurations such as a reserve on the left or right side of the system do not alter results).
+
+# Results
+
+## Importance of Discounting
+
+short-term economic losses from implementation of reserves are well described [@Brown2014] and generally reflect outcomes of our thought experiment described above (Fig 1). However, the importance of understanding how the future value of money will influence the support and buy-in for reserve policies cannot be overstated.  The discount rate reflects the degree to which money today is favored over money tomorrow; the higher the rate, the less a community (or individual) values something in the future relative to today.
+
+Consider a yellowtail snapper fishery simulated by our model under three different discount rates; 0, 0.05, and 0.1 (Fig.2). For a given discount rate, we find the static reserve size that maximizes the community's utility per Eq.15 (using $\alpha=1$). Under the discount rate of 0, the optimal policy for the yellowtail snapper fishery is in a reserve covering ~15% of the fishery, resulting in substantial economic gains for the fishery by year 50. Under a discount rate of 0.05, the optimal reserve size is also ~15%, but the perceived net economic benefit stemming from that reserve is much lower. This strategy results in a positive NPB for the community in slightly over 10 years, indicating that the fishing community would need to value profits ten years hence in order for a reserve to be worthwhile for them to implement today to protect yellowtail snapper. Under a discount rate of 0.2 for this yellowtail snapper fishery, the NPB maximizing reserve is only ~7%, and even that optimal reserve size is capable of generating only a small amount of positive NPB. We see then that this yellowtail snapper fishery is capable of being benefited by a reserve in the long-term. But, the benefits a community perceives they will receive from a reserve are highly dependent on the extent to which a community is able to forgo current catches for future benefits, as reflected by the discount rate. In this case, only a small reserve is optimal today for a community with a discount rate of 0.2.
+
+## Design Solutions to Short-Term Losses
+
+We first explore how the size of the reserve affects the short-term economics of our simulated fisheries.  Under this thought experiment, the fishery is assigned a constant reserve size, ranging from 2.5% to 50% of the available habitat. We apply this procedure to each of the 6 species evaluated here, running over a 50 year time horizon, using our default discount rate of 0.2. 
+
+Due to the overfished conditions simulated, any of the reserve sizes tested here provide at least equal to or greater lifetime catches than those that would have occurred without the reserve. Peak improvements in long-term catches occured generally at reserve sizes near 20%. However, it is much more difficult for a reserve to provide positive NPB values to the simulated fisheries. Only the red throat emperor and yellowtail snapper fisheries are capable of providing substantially positive NPB values to the community under any of the evaluated reserve sizes, though at small reserve sizes red grouper and bumphead parrotfish fisheries were able to achieve NPBs of near to or slightly above 0. The time required to achieve a positive NPB was generally greater than 10 years (Fig.3).
+
+
+
+We next consider the potential NPB outcomes for our simulated fishing community from allowing the reserve to grow or shrink with time. We set $\alpha$ to 0.9, meaning that 90% of the community's utility comes from fishery benefits, but some consideration is made for long-term conservation outcomes (this is done to ensure that a reserve of any size is optimal in the future).
+
+Our results show that dynamic designs can improve the economic outcomes of the reserve in all fisheries except those for blacknose shark and silver trevally. This stands in contrast to static reserve designs in which red throat emperor and yellowtail snapper were the only species to experience positive NPB. Under the optimal strategy, yields generally began to exceed status quo yields within 5-10 years. The time to positive NPB was much longer, generally 10 or more years when positive NPB values were possible. We find the optimal strategy for a reserve that is capable of any positive NPB is to start at a larger reserve size and decrease in size over time (Fig.4). Our results contradict previous findings of flexible reserve designs [@Brown2014], which suggested short-term economic losses could be overcome with growing reserve designs.
+
+
+
+## Multispecies Considerations
+
+Many artisanal fisheries are likely to target multiple species at once. To account for this, we consider the economic impacts of a reserve scenario designed around one species but applied to all six of the fish considered here. For each of the six species included here, we find the utility maximizing reserve strategy. We then apply that optimal strategy to each of the other species' fishery, and assess how detrimental to utility that strategy is when applied to species for which it was not designed.
+
+We find that the utility outcomes for a given species' fishery are relatively insensitive to application of another species' optimal reserve policy. For example, using a reserve designed around yellowtail snapper to manage blacknose shark only reduces the utility of the blacknose shark fishery by ~5%, relative to the highest utility that the blacknose shark fishery could achieve (Fig.5). A reserve randing from 5-15% is the most robust of the possible scenarios, with respect to utility, when applied to all the other fisheries in the study. 
+
+## Financial Solutions
+
+Flexible reserve design strategies are one means to offset short-term economic losses of reserve implementation. We also analyze two potential financial mechanisms for offsetting short-term fishery losses; a loan system and a value-added system. The total relative loss in yields experienced by the fishery for a given scenario *s* is
+
+(16) $O_{s} = -\sum^{T}_{t=0} min(0,Y_{s,t}-Y_{q})$
+
+Where *O~s~* is the amount of yield lost relative to the status quo (*sq*) over time period *T*. 
+
+### Loans
+
+Under the loan strategy, a non-governmental organization, government, or private investor could provide a community with a loan to offset any initial losses from implementing a reserve, with a goal of being repaid by the future fishery benefits resulting from enhanced fishery productivity. The fishing community requests a loan totaling *O~s~*. The surplus available to pay the loan back over time *T* are equal to 
+
+(17) $S_{s} = -\sum^{T}_{t=0} max(0,Y_{s,t}-Y_{q})$
+
+Where *S~s~* is the total positive difference in yields (if any) for a given reserve scenario *s*,over what the fishery would have experienced under the status quo.
+
+For a given loan interest rate *i* for a loan of duration *T*, the total loan payments are equal to 
+
+(18) $C = Tp( \frac{\frac{i}{p}{O}}{1-(1+i)^{-Tp}})$
+
+where *p* is the number of payments per year. Setting the time window of the loan to *T* of 10 years with *p* of 4 payments per year, we then use the *optim* package in *R* [@RCoreTeam2015] to estimate the highest interest rate *i* (%) that the community could afford in order to pay back a 10-year loan such that *C~s,i~ <= S~s~*; meaning that the total loan payments must be less than or equal to the surplus generated by the reserve. The higher the maximum potential interest rate, the more viable the loan is. We break loans apart in to three categories: Interest rates greater than 5% are considered "commercial" (the high rate reflective of the risk in fisheries loans), 1%-5% "social investment" loans, provided by entities that expect a rate of return but may be less concerned with turning a profit, and philanthropy (<1%). 
+ 
+For this experiment, we once again consider a single reserve size applied at once. We find that under these assumptions, loans are not a broadly viable strategy for offsetting the short-term economic losses of the reserve. Loans at any rates above philanthropic levels are viable only for red throat emperor, yellowtail snapper, and red grouper fisheries. The red throat emperor fishery could pay back a commerical loan, even at very high rates, for any of the evaluated reserve sizes. The yellowtail snapper fishery could afford commercial or social investment loans for reserves less than 20% in size, while a social investment loan is possible for the red grouper fishery but only for a very small reserve. For any other reserve sizes or fisheries, there are not enough yield benefits within a ten year window to pay back any loan above a philanthropic rate (Fig.6).
+
+
+### Value Increases
+
+The value increase experiment asks by how much the value of the fishery's catch would have to increase to completely offset the worst yield losses induced by the reserve in any given year. By extension then, that same value increase would more than offset any lesser losses occurring in other years. We implicitly assume a status quo value of $1 per unit weight (though this is an arbitrary choice that does not influence the results). We then ask by what percent the value of the catch caught under a given scenario *s* would have to increase in order to completely offset the greatest loss of yields seen across all years
+
+(19) $P_{s} = 100(\frac{Y_{q}}{Y_{q}+min(Y_{s}-Y_{q})}-1))$
+
+We find value increases to be a more promising solution for offsetting economic losses (Fig.7). While the magnitude of the required value increase scales linearly with the size of the reserve, value increase of 20-30% are capable of completely offsetting short-term economic impacts of reserves up to 10-20% in size in nearly all the evaluated fisheries. The magnitude of value increases needed appears to be inversely related to the magnitude of NPB, implying that smaller value increases may be able to offset losses to species that were unable to achieve positive NPB through design. While value increases may struggle to offset large reserves (>30%), for all fisheries, and especially for those that struggle to benefit from a reserve alone, the value increase shows potential for mitigating short-term economic losses.
+
+
+# Discussion
+
+We propose a metric (NPB) to measure cumulative economic gains after the implementation of a reserve.  We then use this metric to compare three mechanisms for offsetting the short-term economic losses of implementing a marine reserve, including: flexible reserve design, loans, and value increases.  We find that while all three mechanisms can give long term benefits to fisheries, only value increases to the ex-vessel price paid to fishermen were consistently able to offset short-term economic losses to fishing. Even optimally designed reserves struggled to provide net economic benefits within a decade. While loans were viable in some special cases, most instances showed that the interest rate a community could afford to pay on a 10-year loan was too low to be viable for anything but a philanthropy-backed loan. 
+
+Our results demonstrate a need for a different approach and communication strategy for designing marine reserves for fisheries and community benefits. Previous analyses and resulting communications regarding the benefits of marine reserves have used long term changes in yield as the sole benchmark for fishery benefits. Such metrics ignore the local discount rate and short-term loss in yield to the community.  Instead, practitioners should use NPB or similar metrics to clearly communicate the expected short-term losses and timing to benefits resulting from a proposed reserve.  With this approach, reserve design strategies should shift from only considering sizing and spacing details, and additionally work on exploring linkages between affected fisheries and the seafood industry.  Such linkages could allow arrangements with seafood suppliers and fishing communities that provide a price premium to fishing communities who choose to implement and enforce no-take marine reserves for conservation purposes. Alternatively, benefits from tourism could be used to help offset short-term fishery losses [@Sala2013], or payments for ecosystem services  [@Bladon2014] could be used to help offset short-term fishery losses.
+
+While other studies have highlighted the need to account for short-term economic losses from marine reserves [@Brown2014], our study highlights the need to consider mechanisms beyond reserve sizing to minimize short-term losses.  Similar to Brown et al. [-@Brown2014], across species we show that the design of the reserve can improve the economic outcomes of a reserve, especially in the long-term (Fig.3-4). However, our results show though that a shrinking strategy is preferable for a community seeking to maximize the short-term economic benefits of a reserve. While reserves covering 20-30% of habitat often maximized long-term yields in our simulations, reserves with a terminal size less than 15% were preferable in terms of short-term economic benefits. Our study finds little evidence that careful design of the size of a reserve over time is a practical solution for eliminating the short-term economic fishery impacts of implementing a marine reserve. Reserve design is unlikely to move a fishery from having a dramatically negative to a large positive NPB. We should be cautious in relying on design alone to enable reserves to provide short-term economic benefits.
+
+We make several assumptions in the parameterization and setup of the operating model.  While each of these assumptions impact our results, we believe that on the whole our assumptions give the best possible ability for a reserve to provide economic benefits.  These assumptions include: (1) starting with an overfished population at 15% of its unfished stock size; (2) modeling a closed fish population; (3) modeling a closed community, where all economic benefits are captured by the local fishing community; (4) modeling complete selectivity of all sizes by the fishery; and (5) allowing no capacity for additional fishery management practices.  
+
+Using these assumptions, our results show that even when substantial long-term benefits are predicted to result from a reserve, it may take over a decade for the reserve to result in a net gain in fishing yields for the community. While this may be entirely acceptable to some communities, the discount rates reported byJohnson & Saunders [-@Johnson20142014] and Curtis [-@Curtis2002] suggest that the magnitude of these eventual benefits might not be sufficient to offset the short-term losses required to achieve the gains. 
+
+These results should not be taken as an indictment of reserves, but rather a call for clear analyses and communication of the real impacts of reserves to fishing communities. There are many documented benefits reserves can provide to and beyond fisheries, including provision of conservation benefits, ecological resilience, and increased tourism potential. In some cases the societal benefits of conservation and tourism gains from the reserve may well outweigh fishery losses. In addition, as in the overfished case modeled here, reserves can provide fishery benefits in the long-term. Presenting the evolution of net benefits over time as we have done allows researchers and decision makers to confront the potential economic impacts of a reserve, and determine whether a reserve of a particular size and design is likely to provide meaningful net benefits to a community.
+
+Our results demonstrate the need for tighter linkages between government and non-government advocates for marine reserves and the seafood supply chain and independent seafood certification and labeling organizations. It is imperative that those engaged in the design and implementation of reserves carefully consider and communicate the short-term impacts of reserves on the economic well being of affected fisheries. It is misleading to tell a community that a reserve will provide fishery benefits, but neglect to point out that those benefits may not accrue for some time. In addition, support and enforcement of a reserve may quickly dissipate if a reserve does not begin to provide net economic benefits to a community on the time scale fishermen were expecting. The NPB framework presented here is an important tool for assessing the short-term economic impacts of a reserve. Discussing the timing and magnitude of benefits stemming from reserves allows stakeholders to directly confront the challenges, and consider what solutions may be on the table given their circumstances. Our results indicate that rather than focusing on eliminating short-term losses through careful design, or counting on future benefits to finance fishery improvement loans, more potential lies in helping communities increase the value of their catch to offset reserve induced losses.
+
+
+
+# Acknowledgements
+
+We are grateful for assistance and guidance from Lennon Thomas, Sarah Lester, Chris Costello, and Steve Gaines. DO was supported by a grant from the Waitt Foundation and the Daniel and Dianne Vapneck Fisheries Management Fellowship. JW wishes to thank the Sustainable Fisheries Group at UCSB and The Nature Conservancy for support.
+
+# Works Cited
+
+# Tables
+
+```{r}
+
+kable((LifeTable), digits = 2, caption = 'Life history values used. m is natural mortality, Linf (in mm), k, and t0 are the Von Bertalanffy growth parameters, Age/Len Ma50 are age (years) or lengths (mm) at 50% maturity, h is steepness, and the DD value corresponds with the form of density dependence from Babcock & MacCall 2011. Values with * were assumed')
+
+```
+
+
+# Figure Captions
+
+# Figures
+
+```{r, fig.cap= 'Illustration of the trajectories of yield and biomass benefits following a reserve implemented in year 1. Dashed line represents fishing yields relative to the status quo yields pre reserve, the solid line biomass. The dark grey is the total losses in yields, the light grey area the total gains. The vertical grey dashed line shows the year in which the NPB is >= 0'}
+
+Cartoon <- CartoonPlot(SimpleTheme)
+Cartoon
+```
+
+```{r, fig.cap='Example NPB trajectories under the optimal reserve scenario under different discount rates (r) for yellowtail snapper. Size of circles represents % of fishery in a reserve. Reserve is implemented in year 1'}
+
+discount_rate_plot
+
+```
+
+```{r, fig.cap= 'NPB (r=0.2, alpha = 1), across a range of possible reserve sizes for each fishery. Color represents the change in cumulative yields over the cumulative yields that would have occured without the reserve. Size of circles represents the number of years until NPB is greater than or equal to 0'}
+static_NPB_plot
+```
+
+```{r, fig.cap='NPB (r=0.2,alpha = 0.9) trajectories under optimal reserve scenarios. Size of circle represents % of the fishery in a reserve. The color represents the yield surplus in a given year over the yield that would have occured without the reserve. Reserve is implemented in year 1'}
+
+opt_npb_plot
+
+```
+
+```{r, fig.cap= 'Comparison of utility of each fishery using the optimal reserve for each other fishery. Text shows terminal reserve size'}
+species_comp_plot
+```
+
+```{r, fig.cap= 'Maximum % interest rate payable by a fishery for each species across a range of reserve sizes. Dashed line indicates break between philanthropic (<1%) and social investment (1%-5%) loans, above dotted line are commercial loans (>5%)'}
+static__maxinterest_plot
+```
+
+```{r, fig.cap= ' % Price increase required by a fishery to offset the greatest yield loss experienced, accross a range of terminal reserve sizes'}
+static__priceinc_plot
+```
+
+---
+nocite: | 
+ @SEDAR2011, @Kobayashi2011, @SEDAR2009, @Leigh2006, @Rowling2000, @OHop2012
+...
+

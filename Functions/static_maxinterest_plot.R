@@ -11,8 +11,8 @@ static__maxinterest_plot_fun <- function(PlotData, Theme)
                                       aes(x = ReserveSize,y = MaxInterestRate),fill = 'grey76') +
                                  geom_bar(stat = 'identity', position = 'dodge', color = 'black', alpha = 0.85) +
                                  facet_wrap(~Species, scales = 'fixed') + 
-                                 geom_hline(aes(yintercept = 15), size = 1.1, linetype = 'dotted') +
-                                 geom_hline(aes(yintercept = 5), linetype = 'longdash', size = 1.1) +
+                                 geom_hline(aes(yintercept = 5), size = 1.1, linetype = 'dotted') +
+                                 geom_hline(aes(yintercept = 1), linetype = 'longdash', size = 1.1) +
 #                                  scale_fill_manual(values = c('green','red','steelblue2'),name = element_blank()) + 
                                  xlab('Size of Reserve') + 
                                  ylab('Maximum Interest Rate') + 
