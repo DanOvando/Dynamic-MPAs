@@ -8,7 +8,9 @@ species_comp_plot_fun <- function( PlotData, Theme)
                        Theme + 
                        xlab('Reserve Used') + 
                        ylab('Species Managed') + 
-                       theme(axis.line = element_blank(),axis.ticks = element_blank(),axis.text.x = element_text(angle = 35, vjust = 0.9,hjust = 0.9)))
+                       theme(axis.line = element_blank(),axis.ticks = element_blank(),
+                             axis.text.x = element_text(angle = 35, vjust = 0.9,hjust = 0.9)
+                      ,legend.text = element_text(size = 8)))
 
 return(species_comp_plot)
 }

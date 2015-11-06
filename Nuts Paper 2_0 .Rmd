@@ -23,7 +23,7 @@ header-includes:
 - \linenumbers
 number_sections: yes
 csl: fish-and-fisheries.csl
-bibliography: MPA Benefits.bib
+bibliography: MLPA Benefits.bib
 toc: yes
 ---
 

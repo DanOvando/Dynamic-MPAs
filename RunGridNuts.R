@@ -33,16 +33,19 @@ OptTime <- 50 #Time Horizon to optimize over
 Alpha <- 0.5
 
 Font <- 'Helvetica'
-fig_width <- 6
-fig_height <- 4
-text_size <- 12
+FontColor <- 'black'
+fig_width <- 8
+fig_height <- 6
+text_size <- 14
+figure_use <- 'paper'
+
 TimeToRun <- OptTime + 1
 LoanTime <- 11
 DiscRates <- 0.1
 
 BasePatches <- Patches
 
-BatchFolder <- 'Results/Full Grid 2.2 BvBmsy _15/'
+BatchFolder <- 'Results/Full Grid 2.2 BvBmsy _15 Presentation Version/'
 
 RunAnalysis <- FALSE
 
@@ -151,7 +154,6 @@ if (RunAnalysis==F)
 # text_size <- 9
 
 
-FontColor <- 'black'
 
 
 KeynoteTheme <- theme(legend.position = 'top', plot.background = element_rect(color = NA), rect=element_rect(fill = 'transparent', color = NA),
@@ -165,13 +167,29 @@ PaperTheme <- theme(legend.position = 'top',text = element_text(size= 22,family=
                     ,axis.text.y = element_text( size = 30), axis.text.x = element_text(angle = 35, vjust = 0.9,hjust = 0.9,color = FontColor, size = 22),
                     legend.text = element_text(size = 14,color = 'black'),legend.title = element_text(size = 16,color = 'black'))
 
-SimpleTheme <- theme(legend.position = 'top',text = element_text(size = text_size,family = Font,color = FontColor),
-                     axis.text.x = element_text(size = 9, angle = 35, vjust = 0.9, hjust = 0.9),
-                     panel.background =  element_rect(fill = "white", colour = NA),
-                     panel.border =      element_rect(fill = NA, colour = "grey50"), 
-                     panel.grid.major =  element_line(colour = "grey60", size = 0.2),
-                     panel.grid.minor =  element_line(colour = "grey78", size = 0.5))
-
+if (figure_use == 'paper')
+{
+  
+  SimpleTheme <- theme(legend.position = 'top',text = element_text(size = text_size,family = Font,color = FontColor),
+                       axis.text.x = element_text(size = 9, angle = 35, vjust = 0.9, hjust = 0.9),
+                       panel.background =  element_rect(fill = "white", colour = NA),
+                       panel.border =      element_rect(fill = NA, colour = "grey50"), 
+                       panel.grid.major =  element_line(colour = "grey60", size = 0.2),
+                       panel.grid.minor =  element_line(colour = "grey78", size = 0.5))
+}                 
+if (figure_use == 'presentation')
+{
+  SimpleTheme <- theme(legend.position = 'top',text = element_text(size = text_size,family = Font,color = FontColor),
+                       axis.text.x = element_text(size = text_size, angle = 35, vjust = 0.9, hjust = 0.9,color = FontColor),
+                       axis.text.y = element_text(color = FontColor),
+                       plot.background=element_rect(color=NA),
+                       rect = element_rect(fill='transparent',color=NA),
+                       panel.background =  element_rect(fill = "white", colour = NA),
+                       panel.border =      element_rect(fill = NA, colour = "grey50"), 
+                       panel.grid.major =  element_line(colour = "grey60", size = 0.2),
+                       panel.grid.minor =  element_line(colour = "grey78", size = 0.5),
+                       strip.text = element_text(color = 'black'))
+}
 # Process Results ---------------------------------------------------------
 
 Fleet$YieldDiscount <- discount_rate
@@ -184,13 +202,106 @@ species_comparison <- ProcessedNuts$species_comparison
 
 ResSummary <- ProcessedNuts$ResSummary
 
+
+# Cartoon Plots -----------------------------------------------------------
+
+CartoonPlot<- function(Theme)
+{
+  
+  r=0.24
+  K=100
+  Nvec=NA
+  Nvec[1]=K
+  u1=0.16
+  u2=0.12
+  yvec=NA
+  
+  for(t in 2:150){
+    if(t<100)u=u1 else u=u2
+    Nvec[t]=Nvec[t-1]+r*Nvec[t-1]*(1-Nvec[t-1]/K)-u*Nvec[t-1]
+    yvec[t-1]=u*Nvec[t-1]
+    
+  }
+  
+  
+  
+  Years=1:149
+  Nvec=Nvec[1:149]
+  Yield=(yvec-yvec[98])/max(yvec)                 #creat standardized deviations from status quo
+  Biomass=(Nvec-Nvec[98])/max(Nvec)
+  dat=data.frame(Years,Biomass,Yield)
+  
+  datA=subset(dat,Years>90 & Years<=149)
+  datA$Years=-7:51
+  
+  datA$Balance=cumsum(datA$Yield)
+  
+  #find year balance is positive for shaded area cutoff
+  test=subset(datA,Years>0)
+  test$flag=0
+  test$flag[test$Balance>0]=1
+  test$dup=duplicated(test$flag)
+  breakeven=which(test$dup==FALSE)[2]
+  breakYear=test$Years[breakeven]
+  
+  #long format
+  longdat <- reshape(datA[,1:3], 
+                     varying = c("Biomass","Yield"), 
+                     v.names = "value",
+                     timevar = "Objectives", 
+                     times = c("Biomass","Yield"), 
+                     direction = "long")
+  
+  
+  
+  
+  p <- ggplot(longdat, aes(x=Years,y=value))
+  
+  p + geom_area(data=subset(longdat,Years<=12 & Objectives=="Yield"),  fill="darkorange")+ geom_area(data=subset(longdat,Years>=12 &Years<=breakYear& Objectives=="Yield"),  fill="cornflowerblue")+ geom_line(aes(colour=Objectives),size=1.1)+ geom_vline(xintercept = 30,linetype=2) + scale_color_manual(values=c("aquamarine3", "black"))  + ylab("Deviation from Status Quo")  + scale_x_discrete(breaks=c(0,30),labels=c("0","Yield Balance"))     + scale_y_continuous(limits=c(-0.1, 0.2),breaks=0) + Theme
+  
+  
+#   p + geom_area(data=subset(longdat,Years<=12 & Objectives=="Yield"),  fill="grey26")+ geom_area(data=subset(longdat,Years>=12 &Years<=breakYear& Objectives=="Yield"),  fill="grey68")+ geom_line(aes(linetype=Objectives),size=1.1)+ geom_vline(xintercept = 30,linetype=2) + scale_color_manual(values=c("black", "black"))  + ylab("Deviation from Status Quo")  + scale_x_discrete(breaks=c(0,30),labels=c("0","Yield Balance"))     + scale_y_continuous(limits=c(-0.1, 0.2),breaks=0) + Theme
+  
+  
+  
+}
+
+cartoon_plot <- CartoonPlot(SimpleTheme)
+
+ggsave(file=paste(BatchFolder,'Cartoon Plots.pdf',sep=''),plot=cartoon_plot,width=fig_width,height=fig_height)
+
+
+best_static_run <- filter(ReserveResults, Slope == 0 & Intercept == 0 & Year == max(Year)) %>%
+  group_by(Species) %>%
+  summarize(best_npb_run = unique(Run[NPB == max(NPB,na.rm = T)]),
+            best_yield_run = unique(Run[Yield == max(Yield,na.rm = T)]))
+  
+
+ReserveResults <- ReserveResults %>%
+  group_by(Run) %>%
+  mutate(BiomassBalance = Biomass-Biomass[1])
+
+
+npb_illustration_plot <- (ggplot(subset(ReserveResults, Species == 'Yellowtail Snapper' 
+              & Run == best_static_run$best_npb_run[best_static_run$Species == 'Yellowtail Snapper'] & Year < 20),
+       aes(factor(Year-1),YieldBalance/max(YieldBalance), fill = NPB/max(NPB))) + geom_bar(color = 'black',stat = 'identity',position = 'dodge') + 
+  scale_fill_gradient2(name = 'NPB',low = 'red',mid = 'white',high = 'grey0', midpoint = 0) + 
+  SimpleTheme + 
+  geom_point(aes(x = factor(Year -1), y = BiomassBalance/max(BiomassBalance), size = Biomass/max(Biomass)),fill = 'green',shape = 21)
+  + scale_size_continuous(name = 'Biomass') + 
+  xlab('Year') + 
+  ylab('Change From Status Quo') + 
+  geom_hline(aes(yintercept = 0)))
+
+ggsave(file=paste(BatchFolder,'NPB Illustration.pdf',sep=''),plot=npb_illustration_plot,width=fig_width,height=fig_height)
+
 # Analyze Optimal Reserve -------------------------------------------------
 
 OptRun <- filter(ReserveResults,BestRun == T)
 
 opt_npb_plot <- opt_npb_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
-ggsave(file=paste(BatchFolder,'Optimal NPB Trajectory.pdf',sep=''),plot=opt_npb_plot,width=8,height=6)
+ggsave(file=paste(BatchFolder,'Optimal NPB Trajectory.pdf',sep=''),plot=opt_npb_plot,width=fig_width,height=fig_height)
 
 opt_biomass_plot <- opt_biomass_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
@@ -210,21 +321,40 @@ unified_reserve_plot<- opt_reserve_plot_fun( OptRun = filter(ReserveResults,Best
 
 ggsave(file=paste(BatchFolder,'Unified Reserve Trajectory.pdf',sep=''),plot=unified_reserve_plot,width=fig_width,height=fig_height)
 
-species_comp_plot <- species_comp_plot_fun(PlotData = species_comparison, Theme = theme_classic())
+species_comp_plot <- species_comp_plot_fun(PlotData = species_comparison, Theme = SimpleTheme)
+
+# species_comp_plot <- species_comp_plot_fun(PlotData = species_comparison, Theme = theme_classic())
 
 ggsave(file = paste(BatchFolder,'Opt Species Comparison.pdf',sep = ''),plot = species_comp_plot,width = fig_width,height = fig_height)
 
 
 # Different Discount Rates ------------------------------------------------
 
-Discounts <- c(0,0.05,0.2)
+Discounts <- c(0,0.2)
+
+# Discounts <- c(0,0.2)
+
 
 Opt_by_Discount <- lapply(Discounts, Best_Run_By_Discount, Runs = subset(ReserveResults, Intercept == 0 & Slope ==0)
                           , npb_focus = 1) %>% ldply()
 
 discount_rate_plot <- discount_npb_plot_fun(filter(Opt_by_Discount, Species == 'Yellowtail Snapper'), SimpleTheme)
 
-ggsave(file = paste(BatchFolder,'Discount Rate NPB.pdf',sep = ''),plot = discount_rate_plot,width = 5,height = 5)
+ggsave(file = paste(BatchFolder,'Discount Rate NPB.pdf',sep = ''),plot = discount_rate_plot,width = fig_width,height = fig_height)
+
+ConsRun <- unique(Opt_by_Discount$FinalReserve[Opt_by_Discount$DiscountRate == 0 & Opt_by_Discount$Species == 'Yellowtail Snapper'])
+
+Discounts <- c(0,0.2)
+
+target_by_Discount <- lapply(Discounts, Target_Run_By_Discount, Runs = subset(ReserveResults, Intercept == 0 & Slope ==0)
+                          , npb_focus = 1,target_reserve = ConsRun) %>% ldply()
+
+conserve_discount_rate_plot <- discount_npb_plot_fun(filter(target_by_Discount, Species == 'Red Grouper'), SimpleTheme)
+
+ggsave(file = paste(BatchFolder,'Conserve Discount Rate NPB.pdf',sep = ''),plot = conserve_discount_rate_plot,width = fig_width,height = fig_height)
+
+
+
 
 # Analyze Static Reserve -----------------------------------------
 
@@ -234,7 +364,7 @@ StaticSummary <- filter(ResSummary, Intercept == 0 & Slope == 0)
 
 static_NPB_plot <- static_NPB_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
 
-ggsave(file = paste(BatchFolder,'Static NPB.pdf',sep = ''),plot = static_NPB_plot,width = fig_width,height = 6)
+ggsave(file = paste(BatchFolder,'Static NPB.pdf',sep = ''),plot = static_NPB_plot,width = fig_width,height = fig_height)
 
 static_NB_plot <- static_NB_plot_fun(PlotData = StaticSummary, Theme = SimpleTheme)
 
