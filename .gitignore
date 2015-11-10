@@ -7,6 +7,8 @@
 #**/*.rdata
 #**/*.RData
 **/*.key
+**/*.pptx
+**/*.ppt
 **/*.jpg
 **/*.txt
 **/*.Rproj

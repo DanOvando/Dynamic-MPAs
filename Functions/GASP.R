@@ -5,6 +5,20 @@
 #4.29/13
 #Summary: This suite of functions run a general age structured fishery model. Will prepare a short summary shortly to use the set. 
 
+#' Workhorse function to grow age
+#' structured population
+#' 
+#' \code{GrowPopulation} grows age structure population
+#' @param InitialPopulation population at start of simulation
+#' @param FishingPressure FvFmsy to sue
+#' @param Time time to run model
+#' @param MakePlot T or F to produce graphs during run
+#' @param GroupFigName batch figure names
+#' @param Species the particular species being run
+#' @param lh list of life history parameters
+#' @param Patches number of patches
+#' @param FigureFolder folder to store specific speices figures
+
 GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,GroupFigName,Species,lh,Patches,FigureFolder)
 {
   
@@ -15,7 +29,6 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
   if (Time=='EQ')
   {
     TempTime<- 2000
-    # StopTime<- TempTime-1
   }
   if (Time !='EQ')
   {
@@ -130,8 +143,6 @@ GrowPopulation<- function(InitialPopulation,FishingPressure,Time,MakePlots,Group
     
     
     PopArray[t+1,1,]<- RecruitsPerPatch #Add recruits to population 
-    
-    #     PopArray[PopArray<1]<- 0
     
     WeightArray[t+1,,]<- PopArray[t+1,,] * WeightAtAge
     

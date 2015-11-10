@@ -1,5 +1,17 @@
-# Function to run one iteration of Species, MPA, FIshing, etc. combination --------------------------------------------------------------
-
+#' Function to run one iteration of Species, MPA, FIshing, etc. combination
+#' 
+#' \code{RunGridReserve} runs each iteration of NUTS model 
+#' defined by the RunMatrix
+#' @param r the run to use
+#' @param RunMatrix a matrix with rows for unique runs
+#' and columns for parameter values to be used
+#' in a particular run
+#' @param BasePatches the default patch structure
+#' @param Populations a list of the equilibrium pop
+#' for each species
+#' @param BatchFolder the folder to store outputs
+#' @param TimeToRun the number of years to run
+#' 
 RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeToRun)
 {
   
@@ -7,19 +19,19 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
   show(r)
   Run <- RunMatrix[r,]
   
-  for (d in 1:dim(Run)[2]) {
+  for (d in 1:dim(Run)[2]) { # Unclear actually what this does
     eval(parse(text = paste(colnames(Run)[d],'<- I(Run[d])',sep = '')))
   }
   
-  TotalStorage<- as.data.frame(matrix(NA,nrow= TimeToRun,ncol=16))
+  TotalStorage<- as.data.frame(matrix(NA,nrow= TimeToRun,ncol=16)) #storage space
   
   colnames(TotalStorage)<- c('Species','Run','CurrentReserve','FinalReserve','Intercept','Slope','f','Frate','FracNTZ','Year','Yield','Biomass','Numbers','SQYield','SQNumbers','SQBiomass')
   
-  Patches<- BasePatches
+  Patches<- BasePatches #revert patches to basepatches
   
   short_species<- gsub(' ','',Species,fixed = T)
   
-  lh<- eval(parse(text=paste('Populations$',short_species,sep='')))
+  lh<- eval(parse(text=paste('Populations$',short_species,sep=''))) #store life history
   
   EQPopulation<- lh$UnfishedPopulation
   
@@ -27,13 +39,15 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
   
   Fmsy<- lh$Fmsy
   
-  if (is.null(lh$FatTarget) | is.numeric(FLevel))
+  if (is.null(lh$FatTarget) | is.numeric(FLevel)) # Find F/Fmsy that acchieves target B/Bmsy
   {
-  FatTarget<- optimize(log(2*Fmsy$par),f=FindReferencePoint,Target='BvBmsy',TargetValue=FLevel,lower=-10,upper=4,Species=Species,lh=lh,UnfishedPopulation=UnfishedPopulation,Patches=Patches) #Find F that results in target B/Bmsy
-  
-  FatTarget$par<- exp(FatTarget$minimum)
+    FatTarget<- optimize(log(2*Fmsy$par),f=FindReferencePoint,Target='BvBmsy',TargetValue=FLevel,lower=-10,upper=4,Species=Species,lh=lh,UnfishedPopulation=UnfishedPopulation,Patches=Patches) #Find F that results in target B/Bmsy
+    
+    FatTarget$par<- exp(FatTarget$minimum)
   }
   if (is.null(lh$FatTarget)==F & is.numeric(FLevel)==F) {FatTarget<- lh$FatTarget}
+  
+  # Fish population to target B/Bmsy
   BatTargetPopulation<- GrowPopulation(UnfishedPopulation, rep(FatTarget$par,NumPatches),'EQ',0,'BatTarget Run',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder)
   
   EvalTime<- OptTime #Time span to evaluate results on
@@ -52,6 +66,8 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
   
   StartPop<- BasePop$FinalNumAtAge
   
+  # Calculate base conditions ----
+  
   BaseConditions$Yield<- round(BasePop$Performance$Yields[length(BasePop$Performance$Yields)],2)
   
   BaseConditions$Biomass<- round(sum(lh$WeightAtAge %*% BasePop$FinalNumAtAge),2)
@@ -61,42 +77,28 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
   TempPop<- StartPop
   
   Patches<- BasePatches
-   
+  
   # Run Simulation ----------------------------------------------------------
-
+  
   MPAParams<- c(Run$Intercept,Run$Slope)
   
   for (y in 1:TimeToRun)
   {
     
-
-    CurrentMPA<- MPAFunction(MPAParams,y,Run$ReserveSize,EvalTime=TimeToRun)
+    CurrentMPA<- MPAFunction(MPAParams,y,Run$ReserveSize,EvalTime=TimeToRun) #set MPA in current year
     
     if (y==1)
     {
       CurrentMPA<- 0
     }
-#     
-#     if (y>length(MPA))
-#     {
-#       #             CurrentMPA<- MPAs[dim(MPAs)[2],m]
-#       CurrentMPA<-  OptNTZSize$par
-#       
-#     }
-    
-    Patches<- AssignNTZ(CurrentMPA,ReservePosition,BasePatches)
+
+    Patches<- AssignNTZ(CurrentMPA,ReservePosition,BasePatches) #assign MPA
     
     FTemp<- FatTarget$par 
     
-    FVec<- MoveFleet(FTemp,CurrentMPA,FleetSpill,0)
+    FVec<- MoveFleet(FTemp,CurrentMPA,FleetSpill,0) # Distribute fishing effort
     
-#     if (ReserveStrategy=='CatchShareEqNTZ'& y>1)
-#     {
-#       #             FVec<- MoveFleet(FTemp,CurrentMPA,0,0)            
-#       FVec<- MoveFleet(Fmsy$par,CurrentMPA,0,0)            
-#       
-#     }
-#     
+    # Grow population
     PassPop<- GrowPopulation(TempPop,FVec,1,0,'TEST',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder) #grow the new population
     
     TempPop<- PassPop$FinalNumAtAge

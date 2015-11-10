@@ -24,7 +24,7 @@ source('BetterNutzControlfile.R')
 
 
 PopTolerance <- 1 #the cutoff for identifying point where population stops changing
-NumCores<- 1
+NumCores<- 4
 InitialPopulation <- 1000 #Seed for initial population 
 CollapseThreshold <- 0.1
 LookAtLengths <- 0
@@ -41,11 +41,11 @@ figure_use <- 'paper'
 
 TimeToRun <- OptTime + 1
 LoanTime <- 11
-DiscRates <- 0.1
+DiscRates <- seq(.05,.2,by = .05) #.1
 
 BasePatches <- Patches
 
-BatchFolder <- 'Results/Full Grid 2.2 BvBmsy _15 Presentation Version/'
+BatchFolder <- 'Results/Revised Version/'
 
 RunAnalysis <- FALSE
 
@@ -71,15 +71,13 @@ if (RunAnalysis == TRUE) {
   
   dir.create(paste(BatchFolder,sep = ''))
   
-  LifeHistories <- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors = F)
+  LifeHistories <- read.csv('Inputs/Life History Inputs.csv',stringsAsFactors = F) # Read in life history data
   
   LifeColumns <- colnames(LifeHistories)
   
   LifeVars <- c('Range','MaxAge','m','k','Linf','t0','AgeMa50','LengthMa50','MaturityMode','BH.Steepness','wa','wb','WeightForm','fa','fb','DDForm')
   
   SpeciesList <- LifeHistories$CommName
-  
-  #     SpeciesList<- SpeciesList[1:2]
   
   SystemBmsyStorage <- as.data.frame(matrix(NA,nrow=length(SpeciesList),ncol=2))
   
@@ -89,23 +87,18 @@ if (RunAnalysis == TRUE) {
   
   NumFs <- 1
   
-  DefaultLifeHistory <- lh
+  DefaultLifeHistory <- lh #Base life history object
   
-  BasePatches <- Patches
+  BasePatches <- Patches #Base patch structure
   
+  # Set up populations
   
   Populations<- sapply(gsub(' ','',SpeciesList,fixed = T),TargetPop=0.25,PreparePopulations,LifeHistories=LifeHistories,BaseLife=lh,LifeVars = LifeVars,BasePatches = BasePatches,BatchFolder = BatchFolder,USE.NAMES = T)
-  
-  #   Rprof(tmp <- tempfile(),line.profiling=T)
-  #   
-  #   BatTargetPopulation<- GrowPopulation(100, 0,'EQ',0,'BatTarget Run',Species='Yellowtail Snapper',lh=Populations$YellowtailSnapper,Patches=Patches,FigureFolder=FigureFolder)
-  #   
-  #       Rprof() 
-  #       summaryRprof(tmp)
-  #       unlink(tmp)
-  
+
   RunMatrix <- PrepareGrid(SpeciesList,Fs='Set to 0.25',ReserveInc = 0.05,InterceptInc = 0.1,SlopeInc = 0.1,DiscRates)
   
+  unique(RunMatrix$DiscountRate)
+
   save(file = paste(BatchFolder,'run_matrix.Rdata'),RunMatrix)
   
   #       Rprof(tmp <- tempfile(),line.profiling=T)
@@ -130,13 +123,13 @@ if (RunAnalysis == TRUE) {
   
   if (Sys.info()[1]!='Windows')
   {
-    Rprof(tmp <- tempfile(),line.profiling=T)
+#     Rprof(tmp <- tempfile(),line.profiling=T)
     
     ReserveResults <- (mclapply(1:dim(RunMatrix)[1], RunGridReserve, RunMatrix = RunMatrix,BasePatches = BasePatches,
                                 Populations = Populations, BatchFolder = BatchFolder,TimeToRun=TimeToRun, mc.cores = NumCores )) %>% ldply()
-    Rprof() 
-    summaryRprof(tmp)
-    unlink(tmp)
+#     Rprof() 
+#     summaryRprof(tmp)
+#     unlink(tmp)
     
   }
   
@@ -299,6 +292,10 @@ ggsave(file=paste(BatchFolder,'NPB Illustration.pdf',sep=''),plot=npb_illustrati
 
 OptRun <- filter(ReserveResults,BestRun == T)
 
+# One option. Add in the metrics for EQ reserve of size finalreserve
+# Another option Add in metrics for best EQ reserve by species
+
+
 opt_npb_plot <- opt_npb_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
 ggsave(file=paste(BatchFolder,'Optimal NPB Trajectory.pdf',sep=''),plot=opt_npb_plot,width=fig_width,height=fig_height)
@@ -307,6 +304,7 @@ opt_biomass_plot <- opt_biomass_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
 ggsave(file=paste(BatchFolder,'Optimal Biomass Trajectory.pdf',sep = ''),plot = opt_biomass_plot, width = fig_width, height = fig_height)
 
+browser()
 opt_reserve_plot <- opt_reserve_plot_fun(OptRun = OptRun, Theme = SimpleTheme)
 
 ggsave(file=paste(BatchFolder,'Optimal Reserve Trajectory.pdf',sep=''),plot=opt_reserve_plot,width=fig_width,height=fig_height)
