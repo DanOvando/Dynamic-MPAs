@@ -895,10 +895,10 @@ FindReferencePoint<- function(FtoOptim,Target,TargetValue,Species,lh,UnfishedPop
   
   FTemp<- rep(exp(FtoOptim),NumPatches)
   It<-1
-  if(lh$RecDevSTD>0)
-  {
-    It<- 10
-  }
+#   if(lh$RecDevSTD>0)
+#   {
+#     It<- 10
+#   }
   FinalYield<- NULL
   FinalPopulation<- matrix(NA,nrow<- It,ncol=NumPatches)
   for (i in 1:It)
@@ -908,7 +908,7 @@ FindReferencePoint<- function(FtoOptim,Target,TargetValue,Species,lh,UnfishedPop
     FinalYield[i]<- TempFinalYield[length(TempFinalYield)]
     FinalPopulation[i,]<- colSums(TempPop$FinalNumAtAge*lh$WeightAtAge)  
   }
-  
+
   FinalYield<- mean(FinalYield)
   FinalPopulation<- colMeans(FinalPopulation)
   if (Target=='FMSY')
@@ -933,15 +933,20 @@ FindReferencePoint<- function(FtoOptim,Target,TargetValue,Species,lh,UnfishedPop
 
 MoveFleet<- function(BaseF,PercentClosed,FleetSpill,FleetModel)
 {
-  
   if (FleetModel==0 & FleetSpill==1)
   {
-    FTemp<- BaseF*(1+PercentClosed)
-    FTemp<- FTemp*as.numeric(Patches$MPALocations==0)
+#     FTemp <- BaseF*(1+PercentClosed)
+    
+#     f_displaced <- (BaseF* NumPatches * PercentClosed)
+#     
+#     FTemp <- BaseF + f_displaced/(NumPatches * (1-PercentClosed))
+    FTemp<- BaseF* (1/(1-PercentClosed))
+    
+    FTemp <- FTemp*as.numeric(Patches$MPALocations==0)
   }
   if (FleetModel==0 & FleetSpill==0)
   {
-    FTemp<- BaseF*as.numeric(Patches$MPALocations==0)
+    FTemp <- BaseF*as.numeric(Patches$MPALocations==0)
   }
   
   return(FTemp)
@@ -1212,9 +1217,7 @@ movArray<-function(SpaceC,sdy,Form,FigureFolder)
       }
     }
     #now create the movement matrix of probabilities of movement
-    p.init<-round(exp(-((dist)^2)/(2*(sigmaL^2))),2)
-    
-    #now add matrices on ends to wrap movement and normalize so movement from any one area sums to one
+    p.init<-round(exp(-((dist)^2)/(2*(sigmaL^2))),2) #now add matrices on ends to wrap movement and normalize so movement from any one area sums to one
     p.all<-matrix(NA,nrow=P,ncol=(3*P))
     for(i in 1:P)
     {
@@ -1274,7 +1277,7 @@ movArray<-function(SpaceC,sdy,Form,FigureFolder)
   return(SpaceIn)
 }
 
-DistFleet<- function(FishingAtAge,SelectivityAtAge,NumAtAge,lh,Patches)
+DistFleet<- function(FishingAtAge,SelectivityAtAge,NumAtAge,lh,Patches,move_model = 'Dan')
 {
   ### Distribute fishing effort by proportional biomass in fishable patches
   
@@ -1290,10 +1293,37 @@ DistFleet<- function(FishingAtAge,SelectivityAtAge,NumAtAge,lh,Patches)
   
   if (sum(Patches$MPALocations)>0)
   {
+    if (move_model == 'Dan')
+    {
     FishingAtSpace<- t(t(FishingAtAge) *  (ProportionalBiomass/max(ProportionalBiomass)))
-  }
-  else {FishingAtSpace<- FishingAtAge}
+#     FishingAtSpace<- t(t(FishingAtAge) *  as.numeric((ProportionalBiomass/max(ProportionalBiomass)) >0))
+    
+#     
+    
+    }
+    if(move_model == 'Dawn'){
+
+      total_f_by_patch <- colSums(FishingAtAge) # Find the total F in each patch across all ages
+      
+      # transform to matrix
+      f_mat <- matrix(nrow = dim(FishingAtAge)[1], ncol = dim(FishingAtAge)[2],rep(total_f_by_patch,dim(FishingAtAge)[1]), byrow = T)
+      
+      proportional_f <- FishingAtAge / f_mat # express the f at age as a proportion of total F
+      
+      proportional_f[,Patches$MPALocations == 1] <- 0
+      
+      total_f <- sum(total_f_by_patch[Patches$MPALocations == 0]) #Find total F across all patches
+      
+      distribute_f <- total_f *  ProportionalBiomass/sum(ProportionalBiomass) #Distribute by proportional biomass
+      
+      #Redistribute fishing at age
+      FishingAtSpace <- proportional_f * matrix(nrow = dim(FishingAtAge)[1], ncol = dim(FishingAtAge)[2],
+                                                  rep(distribute_f,dim(FishingAtAge)[1]),byrow = T)
+      
+    }
+  }else{FishingAtSpace<- FishingAtAge}
   
   FishingAtSpace[is.na(FishingAtSpace)]<- 0
   return(FishingAtSpace)
 }
+

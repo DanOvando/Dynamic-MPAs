@@ -16,16 +16,17 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
 {
   
   # Set up Run ---------------------------------------------------------------
-  show(r)
   Run <- RunMatrix[r,]
   
   for (d in 1:dim(Run)[2]) { # Unclear actually what this does
     eval(parse(text = paste(colnames(Run)[d],'<- I(Run[d])',sep = '')))
   }
   
-  TotalStorage<- as.data.frame(matrix(NA,nrow= TimeToRun,ncol=16)) #storage space
+  store_vars <- c('Species','Run','discount_rate','CurrentReserve','FinalReserve','Intercept','Slope','f','Frate','FracNTZ','Year','Yield','Biomass','Numbers','SQYield','SQNumbers','SQBiomass')
   
-  colnames(TotalStorage)<- c('Species','Run','CurrentReserve','FinalReserve','Intercept','Slope','f','Frate','FracNTZ','Year','Yield','Biomass','Numbers','SQYield','SQNumbers','SQBiomass')
+  TotalStorage<- as.data.frame(matrix(NA,nrow= TimeToRun,ncol=17)) #storage space
+  
+  colnames(TotalStorage) <- store_vars 
   
   Patches<- BasePatches #revert patches to basepatches
   
@@ -38,7 +39,7 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
   UnfishedPopulation<- EQPopulation$FinalNumAtAge #Unfished numbers at age
   
   Fmsy<- lh$Fmsy
-  
+
   if (is.null(lh$FatTarget) | is.numeric(FLevel)) # Find F/Fmsy that acchieves target B/Bmsy
   {
     FatTarget<- optimize(log(2*Fmsy$par),f=FindReferencePoint,Target='BvBmsy',TargetValue=FLevel,lower=-10,upper=4,Species=Species,lh=lh,UnfishedPopulation=UnfishedPopulation,Patches=Patches) #Find F that results in target B/Bmsy
@@ -91,19 +92,18 @@ RunGridReserve <- function(r,RunMatrix,BasePatches,Populations,BatchFolder,TimeT
     {
       CurrentMPA<- 0
     }
-
+    
     Patches<- AssignNTZ(CurrentMPA,ReservePosition,BasePatches) #assign MPA
     
     FTemp<- FatTarget$par 
     
     FVec<- MoveFleet(FTemp,CurrentMPA,FleetSpill,0) # Distribute fishing effort
-    
     # Grow population
     PassPop<- GrowPopulation(TempPop,FVec,1,0,'TEST',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder) #grow the new population
     
     TempPop<- PassPop$FinalNumAtAge
-    
-    TotalStorage[y,]<- data.frame(as.character(Species),r,CurrentMPA,Run$ReserveSize,Run$Intercept,Run$Slope,FLevel,FatTarget$par,CurrentMPA,y,PassPop$Performance$MeanYield,PassPop$Performance$MeanBiomass,PassPop$Performance$MeanNumbers, BaseConditions$Yield,BaseConditions$Numbers, 
+
+    TotalStorage[y,]<- data.frame(as.character(Species),r,as.numeric(DiscountRate),CurrentMPA,Run$ReserveSize,Run$Intercept,Run$Slope,FLevel,FatTarget$par,CurrentMPA,y,PassPop$Performance$MeanYield,PassPop$Performance$MeanBiomass,PassPop$Performance$MeanNumbers, BaseConditions$Yield,BaseConditions$Numbers, 
                                   BaseConditions$Biomass,stringsAsFactors=F)
   } #Close TimeToRun loop   
   write.table(paste(round(100*(r/dim(RunMatrix)[1])), '% Done With Nuts Runs',sep=''), file = 'NutsProgress.txt', append = TRUE, sep = ";", dec = ".", row.names = FALSE, col.names = FALSE)

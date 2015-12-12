@@ -1,0 +1,10 @@
+load("/Users/danovando/Desktop/Bren/SFG Work/Dynamic MPAs/Results/Submitted Version/NutsResults.Rdata")
+RunMatrix
+ReserveInc
+dim(RunMatrix)
+head(RunMatrix)
+unique(RunMatrix$ReserveSize)
+unique(Intercept)
+unique(RunMatrix$Intercept)
+unique(RunMatrix$SlopeInc)
+unique(RunMatrix$Slope)

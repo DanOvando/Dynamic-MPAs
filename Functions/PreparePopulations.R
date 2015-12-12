@@ -5,6 +5,7 @@ PreparePopulations<- function(s,LifeHistories,LifeVars,BaseLife,BasePatches,Batc
   
   Species<- LifeHistories$CommName[gsub(' ','',LifeHistories$CommName,fixed = T) == s ]
   
+  show(Species)
   lh <- BaseLife
   
   StoreRun <- paste(BatchFolder,Species,sep = '') #1 if you want to create a seeded folder to store results, 0 if you want it in the generic working folder
@@ -18,7 +19,7 @@ PreparePopulations<- function(s,LifeHistories,LifeVars,BaseLife,BasePatches,Batc
     SeedFolder<- paste(StoreRun,'/',sep='')
   }
   
- if (dir.exists(SeedFolder)==F){ dir.create(SeedFolder)}
+  if (dir.exists(SeedFolder)==F){ dir.create(SeedFolder)}
   
   FigureFolder<- paste(SeedFolder,'Figures/',sep='')
   
@@ -50,7 +51,8 @@ PreparePopulations<- function(s,LifeHistories,LifeVars,BaseLife,BasePatches,Batc
   lh$AgeMa95<-  1.01* lh$AgeMa50
   
   lh$MoveType<- '2D'
-  
+  #   browser()
+  #   lh$MovementArray<- movArray(NumPatches,((lh$Range)*NumPatches),'Bounce',FigureFolder)
   lh$MovementArray<- movArray(NumPatches,((lh$Range)*NumPatches)/5,'Wrap',FigureFolder)
   
   lh$Bmsy<- -999
@@ -84,11 +86,8 @@ PreparePopulations<- function(s,LifeHistories,LifeVars,BaseLife,BasePatches,Batc
   plot(lh$FecundityAtAge,ylab='# of Eggs',type='l',lwd=2,xlab='Age')
   dev.off()
   
-  show(Species)
+  # Create Unfished Population ----------------------------------------------
   
-
-# Create Unfished Population ----------------------------------------------
-
   EQPopulation<- GrowPopulation(1000,rep(0,NumPatches),'EQ',0,'EQ Run',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder) #Run the population out to unfished equilibrium
   
   lh<- EQPopulation$lh
@@ -96,15 +95,14 @@ PreparePopulations<- function(s,LifeHistories,LifeVars,BaseLife,BasePatches,Batc
   lh$CarryingCapacityWeight<- (colSums(EQPopulation$FinalNumAtAge*lh$WeightAtAge)) #Calculate carrying capacity in weight
   
   UnfishedPopulation<- EQPopulation$FinalNumAtAge #Unfished numbers at age
-
+  
   lh$UnfishedPopulation<- EQPopulation
   
-
-# Estimate Reference Points -----------------------------------------------
-
-
-  Fmsy<- optimize(log(lh$m[1]),f=FindReferencePoint,Target='FMSY',TargetValue=NA,lower=-10,upper=4,Species=Species,lh=lh,UnfishedPopulation=UnfishedPopulation,Patches=Patches) #Find FMSY  
   
+  # Estimate Reference Points -----------------------------------------------
+  
+  
+  Fmsy<- optimize(log(lh$m[1]),f=FindReferencePoint,Target='FMSY',TargetValue=NA,lower=-10,upper=4,Species=Species,lh=lh,UnfishedPopulation=UnfishedPopulation,Patches=Patches) #Find FMSY  
   Fmsy$par<- exp(Fmsy$minimum) 
   
   BmsyPopulation<- GrowPopulation(UnfishedPopulation,rep(Fmsy$par,NumPatches),'EQ',0,'Bmsy Run',Species=Species,lh=lh,Patches=Patches,FigureFolder=FigureFolder) #Bmsy Population
@@ -124,13 +122,8 @@ PreparePopulations<- function(s,LifeHistories,LifeVars,BaseLife,BasePatches,Batc
   short_species<- gsub(' ','',Species,fixed = TRUE)
   
   eval(parse(text=paste(short_species,'<- lh',sep='')))
-
+  
   return( list(eval(parse(text = paste(short_species, sep = '') ) ) ))
-
-#   return( eval(parse(text = paste('list(', short_species, ' = ', short_species,')', sep = '') ) ) )
   
-#   return( eval(parse(text = paste('unlist(', short_species, ' = ', short_species,')', sep = '') ) ) )
-  
-#   return( list( eval( parse( text = paste( short_species, ' = ', short_species, sep = '') ) ),wtf=2))
 }
 

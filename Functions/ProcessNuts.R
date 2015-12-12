@@ -15,11 +15,13 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,npb_focus)
   
   ReserveResults$YieldBalance <- ReserveResults$Yield - ReserveResults$SQYield
   
+  ReserveResults$perc_yield_balance <- (ReserveResults$Yield - ReserveResults$SQYield)/ ReserveResults$SQYield
+  
   ReserveResults <- ReserveResults %>%
     group_by(Run) %>% 
     arrange(Year) %>%
     mutate(PresentYield=Yield*(1+Fleet$YieldDisc)^-(Year-1),PresentBalance=(Yield-SQYield)*(1+Fleet$YieldDisc)^-(Year-1)) %>%
-    mutate(NPB=cumsum(PresentBalance),NB = cumsum(YieldBalance), NPY=cumsum(PresentYield),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>%
+    mutate(NPB=cumsum(PresentBalance),NB = cumsum(YieldBalance),perc_NB = cumsum(Yield)/cumsum(SQYield) - 1, NPY=cumsum(PresentYield),RequestedLoan = sum(PresentBalance[YieldBalance<0])) %>%
     ungroup() %>%
     group_by(Species) %>% 
     mutate(s_Yield = Yield/max(Yield,na.rm=T),s_PresentYield=s_Yield*(1+Fleet$YieldDisc)^-(Year-1)) %>%
@@ -31,7 +33,8 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,npb_focus)
     ungroup() %>%
     group_by(Species) %>%
 #     mutate(Utility = long_term_objective * (net_yields / max(net_yields)) + (1 - long_term_objective) * (NPY/max(NPY)) ) %>%
-    mutate(Utility = (1-npb_focus) * (net_biomass / max(net_biomass)) + (npb_focus) * (NPY/max(NPY)) ) %>%
+    mutate(Utility = (1-npb_focus) * (Biomass / max(Biomass[Year == max(Year)])) + (npb_focus) * (NPY/max(NPY[Year == max(Year)])) ) %>%
+#     mutate(Utility = (1-npb_focus) * (net_biomass / max(net_biomass)) + (npb_focus) * (NPY/max(NPY)) ) %>%
     ungroup()
   
   OptimalRun<- filter(ReserveResults,Year==max(Year)) %>%
@@ -57,6 +60,7 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,npb_focus)
               BestRun = unique(BestRun), 
               FinalNPB = last(NPB),
               FinalNB = last(NB),
+              Final_PercNB = last(perc_NB),
               TimeToNB = which(NB >= 0)[1],
               FinalUtility = last(Utility), 
               ReserveSize = mean(FinalReserve), 
@@ -124,6 +128,8 @@ ProcessNuts <- function(ReserveResults,Fleet,Scale_Yields,npb_focus)
     mutate(Percent_of_best_NPB = sign(max(NPB)) * (NPB / max(NPB) - 1 ), 
            Percent_of_best_Utility = sign(max(Utility)) * (Utility / max(Utility)) ) %>%
     arrange(Species2)
+  
+  ReserveResults$discount_rate <- Fleet$YieldDiscount
   
   return(list(ReserveResults = ReserveResults, species_comparison = species_comparison,ResSummary = ResSummary))
 }

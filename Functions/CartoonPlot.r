@@ -55,5 +55,21 @@ longdat <- reshape(datA[,1:3],
 
 p <- ggplot(longdat, aes(x=Years,y=value))
 
-p + geom_area(data=subset(longdat,Years<=12 & Objectives=="Yield"),  fill="darkorange")+ geom_area(data=subset(longdat,Years>=12 &Years<=breakYear& Objectives=="Yield"),  fill="cornflowerblue")+ geom_line(aes(colour=Objectives),size=1.1)+ geom_vline(xintercept = 30,linetype=2) + scale_color_manual(values=c("aquamarine3", "black"))  + ylab("Deviation from Status Quo")  + scale_x_discrete(breaks=c(0,30),labels=c("0","Yield Balance"))     + scale_y_continuous(limits=c(-0.1, 0.2),breaks=0) 
+pp <- p + 
+  geom_area(data=subset(longdat,Years<=12 & Objectives=="Yield"),  
+              fill="grey47") + 
+  geom_area(data=subset(longdat,Years>=12 &Years<=breakYear& Objectives=="Yield"), 
+                                            fill="grey74")+ geom_line(aes(linetype=Objectives),size=1.1) + 
+  geom_vline(xintercept = 30,linetype=2) + 
+  ylab("Deviation from Status Quo")  + 
+  scale_x_discrete(breaks=c(0,30),labels=c("0","Yield Balance")) + 
+  scale_y_continuous(limits=c(-0.1, 0.2),breaks=0) +
+  Theme
+
+
+# p + geom_area(data=subset(longdat,Years<=12 & Objectives=="Yield"),  
+#               fill="darkorange")+ geom_area(data=subset(longdat,Years>=12 &Years<=breakYear& Objectives=="Yield"), 
+#                                             fill="cornflowerblue")+ geom_line(aes(colour=Objectives),size=1.1)+ 
+#   geom_vline(xintercept = 30,linetype=2) + scale_color_manual(values=c("aquamarine3", "black"))  + ylab("Deviation from Status Quo")  + scale_x_discrete(breaks=c(0,30),labels=c("0","Yield Balance"))     + scale_y_continuous(limits=c(-0.1, 0.2),breaks=0) 
+
 }
