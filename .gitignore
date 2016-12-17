@@ -16,3 +16,4 @@
 **/*.tiff
 Figs/**.*
 packrat/lib*/
+*.Rdata
